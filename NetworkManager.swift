@@ -50,11 +50,8 @@ class NetworkManager {
         
         var request = URLRequest(url: url)
         request.addValue(apiKey, forHTTPHeaderField: "ocp-apim-subscription-key")
-        request.addValue("ILrail-bar/1.0 macOS", forHTTPHeaderField: "User-Agent")
         
-        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
-            guard let self = self else { return }
-            
+        URLSession.shared.dataTask(with: request) { data, response, error in            
             if let error = error {
                 completion(.failure(error))
                 return

@@ -7,7 +7,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
     private var trainScheduleTimer: Timer?
     private let networkManager = NetworkManager()
     private var preferencesWindow: NSWindow?
-    private var preferencesControls: [String: NSPopUpButton]? // Added property to store controls
+    private var preferencesControls: [String: NSPopUpButton]?
+    private var aboutWindow: NSWindow?
+    
+    // Constants
+    private let appRefreshInterval: TimeInterval = 300 // 5 minutes
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Fetch station data as soon as the app starts
@@ -17,7 +21,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         fetchTrainSchedule()
         
         // Set up a timer to refresh the train schedule every 5 minutes
-        trainScheduleTimer = Timer.scheduledTimer(timeInterval: 300, target: self, selector: #selector(fetchTrainSchedule), userInfo: nil, repeats: true)
+        trainScheduleTimer = Timer.scheduledTimer(timeInterval: appRefreshInterval, target: self, selector: #selector(fetchTrainSchedule), userInfo: nil, repeats: true)
         
         // Listen for preferences changes
         NotificationCenter.default.addObserver(
@@ -87,6 +91,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         
         menu.addItem(NSMenuItem.separator())
         
+        // Add about item with icon
+        let aboutItem = NSMenuItem(title: "About", action: #selector(showAbout(_:)), keyEquivalent: "")
+        aboutItem.image = NSImage(systemSymbolName: "info.circle", accessibilityDescription: "About")
+        aboutItem.target = self
+        menu.addItem(aboutItem)
+        
+        // Add a separator before the quit item
+        menu.addItem(NSMenuItem.separator())
+        
         // Add quit item with icon
         let quitItem = NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         quitItem.image = NSImage(systemSymbolName: "power", accessibilityDescription: "Quit")
@@ -131,7 +144,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
             logWarning("No main screen found, using default center()")
         }
         
-        window.title = "Train Schedule Preferences"
+        window.title = "Preferences"
         window.isReleasedWhenClosed = false
         window.delegate = self  // Set self as the window delegate
         window.level = .floating  // Try to make it appear above other windows
@@ -221,6 +234,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         let importantItems = menu.items.filter { item in
             return item.title == "Preferences..." || 
                    item.title == "Refresh" || 
+                   item.title == "About" ||
                    item.title == "Quit" ||
                    item.isSeparatorItem
         }
@@ -252,7 +266,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         
         // Restore important menu items
         for item in importantItems {
-            if item.title == "Preferences..." || item.title == "Refresh" || item.title == "Quit" {
+            if item.title == "Preferences..." || item.title == "Refresh" || item.title == "About" || item.title == "Quit" {
+                // Make sure our About menu item always has its action and target set
+                if item.title == "About" {
+                    item.action = #selector(showAbout(_:))
+                    item.target = self
+                }
                 menu.addItem(item)
             } else if item.isSeparatorItem && menu.items.last?.title != nil {
                 // Add separators only between items, not after another separator
@@ -292,6 +311,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         let importantItems = menu.items.filter { item in
             return item.title == "Preferences..." || 
                    item.title == "Refresh" || 
+                   item.title == "About" ||
                    item.title == "Quit" ||
                    item.isSeparatorItem
         }
@@ -344,7 +364,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         
         // Restore important menu items
         for item in importantItems {
-            if item.title == "Preferences..." || item.title == "Refresh" || item.title == "Quit" {
+            if item.title == "Preferences..." || item.title == "Refresh" || item.title == "About" || item.title == "Quit" {
+                // Make sure our About menu item always has its action and target set
+                if item.title == "About" {
+                    item.action = #selector(showAbout(_:))
+                    item.target = self
+                }
                 menu.addItem(item)
             } else if item.isSeparatorItem && menu.items.last?.title != nil {
                 // Add separators only between items, not after another separator
@@ -384,6 +409,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         let importantItems = menu.items.filter { item in
             return item.title == "Preferences..." || 
                    item.title == "Refresh" || 
+                   item.title == "About" ||
                    item.title == "Quit" ||
                    item.isSeparatorItem
         }
@@ -408,7 +434,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         
         // Restore important menu items
         for item in importantItems {
-            if item.title == "Preferences..." || item.title == "Refresh" || item.title == "Quit" {
+            if item.title == "Preferences..." || item.title == "Refresh" || item.title == "About" || item.title == "Quit" {
+                // Make sure our About menu item always has its action and target set
+                if item.title == "About" {
+                    item.action = #selector(showAbout(_:))
+                    item.target = self
+                }
                 menu.addItem(item)
             } else if item.isSeparatorItem && menu.items.last?.title != nil {
                 // Add separators only between items, not after another separator
@@ -428,6 +459,55 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         }
     }
     
+    @objc func showAbout(_ sender: Any?) {      
+        // If an about window already exists, just bring it to front
+        if let window = aboutWindow {
+            window.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+        
+        // Create a new window for the About dialog
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 350, height: 350),  // Increased height for the image
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        
+        window.title = "About"
+        window.center()
+        window.isReleasedWhenClosed = false
+        window.delegate = self  // Set self as the window delegate
+        window.level = .floating  // Try to make it appear above other windows
+        
+        // Create and set the SwiftUI view as content
+        let aboutView = AboutView(window: window)
+        let hostingView = NSHostingView(rootView: aboutView)
+        window.contentView = hostingView
+        
+        // Make the app active and show the window
+        NSApp.activate(ignoringOtherApps: true)
+        window.makeKeyAndOrderFront(nil)
+        
+        // Store reference to prevent deallocation
+        aboutWindow = window
+    }
+    
+    @objc func openGitHub() {
+        // Replace with your actual GitHub URL
+        if let url = URL(string: "https://github.com/danny") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+    
+    @objc func openLinkedIn() {
+        // Replace with your actual LinkedIn URL
+        if let url = URL(string: "https://linkedin.com/in/danny") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+    
     // MARK: - NSWindowDelegate
     
     func windowWillClose(_ notification: Notification) {
@@ -438,14 +518,66 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
             preferencesWindow = nil
             preferencesControls = nil
         }
+        
+        // If our about window is closing, clear the reference
+        if let closingWindow = notification.object as? NSWindow,
+           closingWindow === aboutWindow {
+            // Ensure the window is completely released
+            aboutWindow = nil
+        }
     }
-    
-    // MARK: - NSMenuItemValidation
-    
+        
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
-        if menuItem.action == #selector(showPreferences(_:)) {
+        if menuItem.action == #selector(showPreferences(_:)) || 
+           menuItem.action == #selector(showAbout(_:)) {
             return true
         }
         return true
+    }
+}
+
+// A simple SwiftUI view for the About dialog
+struct AboutView: View {
+    let window: NSWindow
+    
+    var body: some View {
+        VStack(spacing: 10) {
+            // Static tram.fill icon
+            Image(systemName: "tram.fill")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 100, height: 100)
+            
+            Text("A Menubar app for Israel Railways train schedules")
+                .font(.subheadline)
+                .multilineTextAlignment(.center)
+            
+            HStack(spacing: 30) {
+                Button(action: {
+                    if let url = URL(string: "https://github.com/drehelis") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }) {
+                    Text("Github")
+                        .font(.headline)
+                }
+                .buttonStyle(PlainButtonStyle())
+                
+                Button(action: {
+                    if let url = URL(string: "https://linkedin.com/in/drehelis") {
+                        NSWorkspace.shared.open(url)
+                    }
+                }) {
+                    Text("LinkedIn")
+                        .font(.headline)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            .padding(.top, 10)
+            
+            Spacer()
+        }
+        .padding()
+        .frame(width: 350, height: 200)
     }
 }
