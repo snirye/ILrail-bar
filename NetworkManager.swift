@@ -114,35 +114,47 @@ class NetworkManager {
                 }
                 
                 let response = try decoder.decode(APIResponse.self, from: data)
+
+                let now = Date()
+                logDebug("Current date: \(now)")
                 
                 // Extract all trains from all travels
                 var trainSchedules: [TrainSchedule] = []
                 
                 for travel in response.result.travels {
-                    for trainData in travel.trains {
+                    // The number of changes is the number of trains in this travel minus 1
+                    // If there's just one train, there are 0 changes
+                    let trainChanges = travel.trains.count - 1
+                    
+                    // For multi-train journeys, we only need to add the first train segment
+                    // with information about the entire journey
+                    if let firstTrainData = travel.trains.first {
                         // Convert the train number to string properly
-                        let trainNumberString = String(describing: trainData.trainNumber)
+                        let trainNumberString = String(describing: firstTrainData.trainNumber)
                         
-                        // Only add trains that match our origin station filter
-                        // Checking if the orignStation (fromStationName) matches our preferences
-                        if trainData.fromStationName == preferences.fromStation && 
-                           trainData.toStationName == preferences.toStation {                            
-                            let schedule = TrainSchedule(
-                                trainNumber: trainNumberString,
-                                departureTime: trainData.departureTime,
-                                arrivalTime: trainData.arrivalTime,
-                                platform: trainData.platform,
-                                fromStationName: trainData.fromStationName ?? preferences.fromStation,
-                                toStationName: trainData.toStationName ?? preferences.toStation
-                            )
-                            trainSchedules.append(schedule)
-                        }
+                        // Collect all train numbers from this travel
+                        let allTrainNumbers = travel.trains.map { String(describing: $0.trainNumber) }
+                        
+                        // We want to show the first train of each travel, with the overall journey time
+                        // Instead of checking that both stations match, we'll check the overall journey details
+                        // This handles train changes correctly
+                        let schedule = TrainSchedule(
+                            trainNumber: trainNumberString,
+                            departureTime: firstTrainData.departureTime,
+                            arrivalTime: travel.trains.last?.arrivalTime ?? firstTrainData.arrivalTime, // Use the final arrival time for the complete journey
+                            platform: firstTrainData.platform,
+                            fromStationName: firstTrainData.fromStationName ?? preferences.fromStation,
+                            toStationName: travel.trains.last?.toStationName ?? firstTrainData.toStationName ?? preferences.toStation,
+                            trainChanges: trainChanges,
+                            allTrainNumbers: allTrainNumbers
+                        )
+                        trainSchedules.append(schedule)
+                        
+                        // Log the travel information for debugging
+                        logDebug("Adding journey with \(trainChanges) switches: Train #\(trainNumberString) from \(firstTrainData.fromStationName ?? "unknown") to \(travel.trains.last?.toStationName ?? "unknown")")
                     }
                 }
                 
-                // Get current date with proper time zone handling
-                let now = Date()
-                logDebug("Current date: \(now)")
                                
                 // Filter out trains that have already departed with 1-minute buffer
                 // Sometimes API time and local time can be slightly off
@@ -155,11 +167,11 @@ class NetworkManager {
                 
                 // Debug info for the first few trains after sorting
                 logInfo("Sorted upcoming trains:")
-                for (index, train) in sortedTrains.enumerated() {
+                for (_, train) in sortedTrains.enumerated() {
                     let formatter = DateFormatter()
                     formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
                     let departureString = formatter.string(from: train.departureTime)
-                    logDebug("Train \(index): #\(train.trainNumber), from: \(train.fromStationName), to: \(train.toStationName), departs at \(departureString)")
+                    logDebug("Train #\(train.trainNumber): from: \(train.fromStationName), to: \(train.toStationName), departs at \(departureString)")
                 }
                 
                 completion(.success(sortedTrains))

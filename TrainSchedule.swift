@@ -7,4 +7,6 @@ struct TrainSchedule {
     let platform: String?
     let fromStationName: String
     let toStationName: String
+    let trainChanges: Int
+    let allTrainNumbers: [String] // Added to store all train IDs in a journey
 }

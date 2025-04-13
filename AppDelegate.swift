@@ -41,8 +41,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
                     
                     // Notify that stations have been loaded
                     NotificationCenter.default.post(name: .stationsLoaded, object: nil)
-                    
-                    logInfo("Loaded \(stations.count) stations from remote source")
+
                 } else {
                     logWarning("Failed to load stations, using default stations")
                 }
@@ -255,7 +254,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         // Add train info item
         let trainNumber = train.trainNumber.isEmpty ? "" : " (Train #\(train.trainNumber))"
         let trainInfoItem = NSMenuItem(
-            title: "Next train: \(formatter.string(from: train.departureTime)) → \(formatter.string(from: train.arrivalTime))\(trainNumber)",
+            title: "Next: \(formatter.string(from: train.departureTime)) → \(formatter.string(from: train.arrivalTime)) (\(train.trainChanges))\(trainNumber)",
             action: nil, 
             keyEquivalent: ""
         )
@@ -331,30 +330,75 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         let timeUntilDeparture = firstTrain.departureTime.timeIntervalSinceNow / 60 // in minutes
         
         // Display the next train
-        let firstTrainNumber = firstTrain.trainNumber.isEmpty ? "" : " (Train #\(firstTrain.trainNumber))"
+        let firstTrainTitle = "Next: \(formatter.string(from: firstTrain.departureTime)) → \(formatter.string(from: firstTrain.arrivalTime)) (\(firstTrain.trainChanges))"
+        
+        // Create an attributed string for the first train info
+        let firstTrainAttrString = NSMutableAttributedString(string: firstTrainTitle)
+        
+        // Add train number information with smaller font
+        if firstTrain.trainChanges > 0 && !firstTrain.allTrainNumbers.isEmpty {
+            // Format as: "(Train #7616, #1234, #4321)" with smaller font
+            let trainNumbersString = firstTrain.allTrainNumbers.map { "#\($0)" }.joined(separator: ", ")
+            let trainNumberPart = " (\(trainNumbersString))"
+            let trainAttr = NSMutableAttributedString(string: trainNumberPart, attributes: [
+                .font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+            ])
+            firstTrainAttrString.append(trainAttr)
+        } else if !firstTrain.trainNumber.isEmpty {
+            // For a single train, just use the original format but with smaller font
+            let trainNumberPart = " (#\(firstTrain.trainNumber))"
+            let trainAttr = NSMutableAttributedString(string: trainNumberPart, attributes: [
+                .font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+            ])
+            firstTrainAttrString.append(trainAttr)
+        }
+        
         let firstTrainInfoItem = NSMenuItem(
-            title: "Next train: \(formatter.string(from: firstTrain.departureTime)) → \(formatter.string(from: firstTrain.arrivalTime))\(firstTrainNumber)",
+            title: "",
             action: nil, 
             keyEquivalent: ""
         )
+        firstTrainInfoItem.attributedTitle = firstTrainAttrString
         menu.addItem(firstTrainInfoItem)
         
         // Add up to 3 additional trains
         let maxTrainsToShow = min(4, trainSchedules.count) // Show up to 4 trains total (1 + 3 additional)
         
         if trainSchedules.count > 1 {
-            // Add a separator before upcoming trains
             menu.addItem(NSMenuItem.separator())
-            menu.addItem(NSMenuItem(title: "Upcoming trains:", action: nil, keyEquivalent: ""))
+            menu.addItem(NSMenuItem(title: "Upcoming:", action: nil, keyEquivalent: ""))
             
             for i in 1..<maxTrainsToShow {
                 let train = trainSchedules[i]
-                let trainNumber = train.trainNumber.isEmpty ? "" : " (Train #\(train.trainNumber))"
+                
+                // Create the basic train info title
+                let trainBaseTitle = "\(formatter.string(from: train.departureTime)) → \(formatter.string(from: train.arrivalTime)) (\(train.trainChanges))"
+                let trainAttrString = NSMutableAttributedString(string: trainBaseTitle)
+                
+                // Add train number information with smaller font
+                if train.trainChanges > 0 && !train.allTrainNumbers.isEmpty {
+                    // Format as: "(Train #7616, #1234, #4321)" with smaller font
+                    let trainNumbersString = train.allTrainNumbers.map { "#\($0)" }.joined(separator: ", ")
+                    let trainNumberPart = " (\(trainNumbersString))"
+                    let trainAttr = NSMutableAttributedString(string: trainNumberPart, attributes: [
+                        .font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+                    ])
+                    trainAttrString.append(trainAttr)
+                } else if !train.trainNumber.isEmpty {
+                    // For a single train, use smaller font
+                    let trainNumberPart = " (#\(train.trainNumber))"
+                    let trainAttr = NSMutableAttributedString(string: trainNumberPart, attributes: [
+                        .font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+                    ])
+                    trainAttrString.append(trainAttr)
+                }
+                
                 let trainInfoItem = NSMenuItem(
-                    title: "\(formatter.string(from: train.departureTime)) → \(formatter.string(from: train.arrivalTime))\(trainNumber)",
+                    title: "",
                     action: nil, 
                     keyEquivalent: ""
                 )
+                trainInfoItem.attributedTitle = trainAttrString
                 menu.addItem(trainInfoItem)
             }
         }
@@ -542,15 +586,56 @@ struct AboutView: View {
     
     var body: some View {
         VStack(spacing: 10) {
-            // Static tram.fill icon
             Image(systemName: "tram.fill")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 100, height: 100)
             
-            Text("A Menubar app for Israel Railways train schedules")
-                .font(.subheadline)
-                .multilineTextAlignment(.center)
+            GroupBox(label: 
+                Text("Legend:")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.bottom, 4)
+            ) {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 5) {
+                        Text("Red")
+                            .foregroundColor(.red)
+                            .fontWeight(.medium)
+                        Text("- Train departing in less than 15 minutes")
+                    }
+                    
+                    HStack(spacing: 5) {
+                        Text("Orange")
+                            .foregroundColor(.orange)
+                            .fontWeight(.medium)
+                        Text("- Train departing in less than 30 minutes")
+                    }
+                    
+                    HStack(spacing: 5) {
+                        Text("Default")
+                            .fontWeight(.medium)
+                        Text("- Train departing in 30+ minutes")
+                    }
+                    
+                    Divider()
+                        .padding(.vertical, 4)
+                    
+                    HStack(spacing: 5) {
+                        Text("(0)")
+                            .fontWeight(.medium)
+                        Text("- No train changes required")
+                    }
+                    
+                    HStack(spacing: 5) {
+                        Text("(1+)")
+                            .fontWeight(.medium)
+                        Text("- Train changes required")
+                    }
+                }
+                .padding(8)
+            }
+            .padding(.horizontal, 4)
             
             HStack(spacing: 30) {
                 Button(action: {
@@ -578,6 +663,6 @@ struct AboutView: View {
             Spacer()
         }
         .padding()
-        .frame(width: 350, height: 200)
+        .frame(width: 350, height: 400)
     }
 }
