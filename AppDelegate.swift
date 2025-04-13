@@ -38,9 +38,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
                     // Notify that stations have been loaded
                     NotificationCenter.default.post(name: .stationsLoaded, object: nil)
                     
-                    print("Loaded \(stations.count) stations from remote source")
+                    logInfo("Loaded \(stations.count) stations from remote source")
                 } else {
-                    print("Failed to load stations, using default stations")
+                    logWarning("Failed to load stations, using default stations")
                 }
             }
         }
@@ -104,8 +104,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
             // Add more debugging - print window position
             if let screenFrame = NSScreen.main?.frame {
                 let windowFrame = window.frame
-                print("Main screen: \(screenFrame)")
-                print("Window frame: \(windowFrame)")
+                logDebug("Main screen: \(screenFrame)")
+                logDebug("Window frame: \(windowFrame)")
             }
             return
         }
@@ -125,10 +125,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
             let x = screenFrame.origin.x + (screenFrame.width - windowFrame.width) / 2
             let y = screenFrame.origin.y + (screenFrame.height - windowFrame.height) / 2
             window.setFrameOrigin(NSPoint(x: x, y: y))
-            print("Positioning window at x:\(x), y:\(y) on screen: \(screenFrame)")
+            logDebug("Positioning window at x:\(x), y:\(y) on screen: \(screenFrame)")
         } else {
             window.center()
-            print("No main screen found, using default center()")
+            logWarning("No main screen found, using default center()")
         }
         
         window.title = "Train Schedule Preferences"
@@ -149,11 +149,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         preferencesWindow = window
         
         // Debug: verify window is created
-        print("Preferences window created and should be visible now")
+        logInfo("Preferences window created and should be visible now")
         
         // Additional debugging - print window position
         let windowFrame = window.frame
-        print("Window frame after positioning: \(windowFrame)")
+        logDebug("Window frame after positioning: \(windowFrame)")
     }
     
     @objc func savePreferences(_ sender: NSButton) {
@@ -161,7 +161,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         guard let controls = preferencesControls,
               let fromPopup = controls["fromPopup"],
               let toPopup = controls["toPopup"] else {
-            print("Error: Could not access controls")
+            logError("Error: Could not access controls")
             return
         }
         
@@ -184,7 +184,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
             // Notify that preferences changed
             NotificationCenter.default.post(name: .preferencesChanged, object: nil)
             
-            print("Saved preferences: from=\(fromStation.name) to=\(toStation.name)")
+            logInfo("Saved preferences: from=\(fromStation.name) to=\(toStation.name)")
         }
         
         // Close the window

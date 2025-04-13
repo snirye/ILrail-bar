@@ -92,7 +92,7 @@ struct Station: Identifiable, Hashable {
                 }.sorted { $0.name < $1.name }
                 
                 if !stations.isEmpty {
-                    print("Using \(stations.count) stations from cache")
+                    logDebug("Using \(stations.count) stations from cache")
                     // Return cached stations immediately but still try to fetch fresh ones
                     setStations(stations)
                     NotificationCenter.default.post(name: .stationsLoaded, object: nil)
@@ -101,7 +101,7 @@ struct Station: Identifiable, Hashable {
                     // Continue fetch for the latest data in the background
                 }
             } catch {
-                print("Error decoding cached stations: \(error.localizedDescription)")
+                logError("Error decoding cached stations: \(error.localizedDescription)")
                 // Continue with remote fetch
             }
         }
@@ -116,7 +116,7 @@ struct Station: Identifiable, Hashable {
             }
             
             // If primary source fails, use default stations
-            print("Using default stations as primary source failed")
+            logWarning("Using default stations as primary source failed")
             setStations(defaultStations)
             NotificationCenter.default.post(name: .stationsLoaded, object: nil)
             completion(defaultStations)
@@ -130,7 +130,7 @@ struct Station: Identifiable, Hashable {
         URLSession.shared.dataTask(with: request) { data, response, error in
             guard let data = data, error == nil else {
                 let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
-                print("Error fetching stations from \(url.absoluteString): \(error?.localizedDescription ?? "HTTP \(statusCode)")")
+                logError("Error fetching stations from \(url.absoluteString): \(error?.localizedDescription ?? "HTTP \(statusCode)")")
                 completion(nil)
                 return
             }
@@ -152,10 +152,10 @@ struct Station: Identifiable, Hashable {
                 
                 // Verify we got stations
                 if stations.isEmpty {
-                    print("Warning: Received empty stations list from \(url.absoluteString)")
+                    logWarning("Warning: Received empty stations list from \(url.absoluteString)")
                     completion(nil)
                 } else {
-                    print("Successfully loaded \(stations.count) stations from \(url.absoluteString)")
+                    logDebug("Successfully loaded \(stations.count) stations from \(url.absoluteString)")
                     
                     // Cache the data for future use
                     UserDefaults.standard.set(data, forKey: "cachedStationsData")
@@ -167,21 +167,21 @@ struct Station: Identifiable, Hashable {
                     completion(stations)
                 }
             } catch {
-                print("Error decoding stations from \(url.absoluteString): \(error.localizedDescription)")
+                logError("Error decoding stations from \(url.absoluteString): \(error.localizedDescription)")
                 
                 // Try to decode the structure of the JSON to understand the format
                 do {
                     if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
-                        print("JSON is a dictionary with keys: \(json.keys)")
+                        logDebug("JSON is a dictionary with keys: \(json.keys)")
                         // Handle dictionary format if needed
                     } else if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [[String: Any]] {
-                        print("JSON is an array of dictionaries with \(json.count) items")
+                        logDebug("JSON is an array of dictionaries with \(json.count) items")
                         // Handle array format
                     } else {
-                        print("JSON is in an unknown format")
+                        logDebug("JSON is in an unknown format")
                     }
                 } catch {
-                    print("Failed to parse JSON: \(error.localizedDescription)")
+                    logError("Failed to parse JSON: \(error.localizedDescription)")
                 }
                 
                 completion(nil)

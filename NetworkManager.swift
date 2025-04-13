@@ -29,7 +29,7 @@ class NetworkManager {
         let preferences = PreferencesManager.shared.preferences
         
         // Log preferences to check station IDs
-        print("Fetching trains from \(preferences.fromStation) to \(preferences.toStation)")
+        logInfo("Fetching trains from \(preferences.fromStation) to \(preferences.toStation)")
         
         // Construct URL with query parameters
         var components = URLComponents(string: baseURL)
@@ -108,7 +108,7 @@ class NetworkManager {
                     }
                     
                     // Log the problematic date string to help with debugging
-                    print("Failed to parse date string: \(dateString)")
+                    logWarning("Failed to parse date string: \(dateString)")
                     
                     throw DecodingError.dataCorrupted(
                         DecodingError.Context(codingPath: decoder.codingPath,
@@ -145,7 +145,7 @@ class NetworkManager {
                 
                 // Get current date with proper time zone handling
                 let now = Date()
-                print("Current date: \(now)")
+                logDebug("Current date: \(now)")
                                
                 // Filter out trains that have already departed with 1-minute buffer
                 // Sometimes API time and local time can be slightly off
@@ -156,18 +156,18 @@ class NetworkManager {
                 // Sort the filtered trains by departure time
                 let sortedTrains = upcomingTrains.sorted { $0.departureTime < $1.departureTime }
                 
-                // Print debug info for the first few trains after sorting
-                print("Sorted upcoming trains:")
+                // Debug info for the first few trains after sorting
+                logInfo("Sorted upcoming trains:")
                 for (index, train) in sortedTrains.enumerated() {
                     let formatter = DateFormatter()
                     formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
                     let departureString = formatter.string(from: train.departureTime)
-                    print("Train \(index): #\(train.trainNumber), from: \(train.fromStationName), to: \(train.toStationName), departs at \(departureString)")
+                    logDebug("Train \(index): #\(train.trainNumber), from: \(train.fromStationName), to: \(train.toStationName), departs at \(departureString)")
                 }
                 
                 completion(.success(sortedTrains))
             } catch {
-                print("Decoding error: \(error)")
+                logError("Decoding error: \(error)")
                 completion(.failure(NetworkError.decodingError))
             }
         }.resume()
