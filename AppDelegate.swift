@@ -149,7 +149,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         preferencesWindow = window
         
         // Debug: verify window is created
-        logInfo("Preferences window created and should be visible now")
+        logDebug("Preferences window created and should be visible now")
         
         // Additional debugging - print window position
         let windowFrame = window.frame
@@ -203,8 +203,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
             DispatchQueue.main.async {
                 switch result {
                 case .success(let trainSchedules):
-                    if let nextTrain = trainSchedules.first {
-                        self.updateMenuBarWithNextTrain(nextTrain)
+                    if !trainSchedules.isEmpty {
+                        // Pass all train schedules to the update method
+                        self.updateMenuBarWithTrains(trainSchedules)
                     } else {
                         self.updateMenuBarWithError("No trains found")
                     }
@@ -262,6 +263,98 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         // Set status bar title with color based on time until departure
         if let button = statusItem.button {
             let departureTimeString = formatter.string(from: train.departureTime)
+            
+            // Set color based on time until departure
+            if timeUntilDeparture < 15 {
+                // Less than 15 minutes - use red
+                button.attributedTitle = NSAttributedString(
+                    string: " " + departureTimeString,
+                    attributes: [NSAttributedString.Key.foregroundColor: NSColor.systemRed]
+                )
+            } else if timeUntilDeparture < 30 {
+                // Less than 30 minutes - use orange
+                button.attributedTitle = NSAttributedString(
+                    string: " " + departureTimeString,
+                    attributes: [NSAttributedString.Key.foregroundColor: NSColor.systemOrange]
+                )
+            } else {
+                // More than 30 minutes - use default system color
+                button.attributedTitle = NSAttributedString(
+                    string: " " + departureTimeString,
+                    attributes: [NSAttributedString.Key.foregroundColor: NSColor.labelColor]
+                )
+            }
+        }
+    }
+    
+    private func updateMenuBarWithTrains(_ trainSchedules: [TrainSchedule]) {
+        // Keep track of important menu items
+        let importantItems = menu.items.filter { item in
+            return item.title == "Preferences..." || 
+                   item.title == "Refresh" || 
+                   item.title == "Quit" ||
+                   item.isSeparatorItem
+        }
+        
+        // Clear all items
+        menu.removeAllItems()
+        
+        // Add separator at the top
+        menu.addItem(NSMenuItem.separator())
+        
+        // Add train information
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        
+        // Get the first train for the status bar display
+        let firstTrain = trainSchedules[0]
+        let timeUntilDeparture = firstTrain.departureTime.timeIntervalSinceNow / 60 // in minutes
+        
+        // Display the next train
+        let firstTrainNumber = firstTrain.trainNumber.isEmpty ? "" : " (Train #\(firstTrain.trainNumber))"
+        let firstTrainInfoItem = NSMenuItem(
+            title: "Next train: \(formatter.string(from: firstTrain.departureTime)) → \(formatter.string(from: firstTrain.arrivalTime))\(firstTrainNumber)",
+            action: nil, 
+            keyEquivalent: ""
+        )
+        menu.addItem(firstTrainInfoItem)
+        
+        // Add up to 3 additional trains
+        let maxTrainsToShow = min(4, trainSchedules.count) // Show up to 4 trains total (1 + 3 additional)
+        
+        if trainSchedules.count > 1 {
+            // Add a separator before upcoming trains
+            menu.addItem(NSMenuItem.separator())
+            menu.addItem(NSMenuItem(title: "Upcoming trains:", action: nil, keyEquivalent: ""))
+            
+            for i in 1..<maxTrainsToShow {
+                let train = trainSchedules[i]
+                let trainNumber = train.trainNumber.isEmpty ? "" : " (Train #\(train.trainNumber))"
+                let trainInfoItem = NSMenuItem(
+                    title: "\(formatter.string(from: train.departureTime)) → \(formatter.string(from: train.arrivalTime))\(trainNumber)",
+                    action: nil, 
+                    keyEquivalent: ""
+                )
+                menu.addItem(trainInfoItem)
+            }
+        }
+        
+        // Add a separator before the control items
+        menu.addItem(NSMenuItem.separator())
+        
+        // Restore important menu items
+        for item in importantItems {
+            if item.title == "Preferences..." || item.title == "Refresh" || item.title == "Quit" {
+                menu.addItem(item)
+            } else if item.isSeparatorItem && menu.items.last?.title != nil {
+                // Add separators only between items, not after another separator
+                menu.addItem(NSMenuItem.separator())
+            }
+        }
+        
+        // Set status bar title with color based on time until departure
+        if let button = statusItem.button {
+            let departureTimeString = formatter.string(from: firstTrain.departureTime)
             
             // Set color based on time until departure
             if timeUntilDeparture < 15 {
