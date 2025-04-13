@@ -361,8 +361,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         firstTrainInfoItem.attributedTitle = firstTrainAttrString
         menu.addItem(firstTrainInfoItem)
         
-        // Add up to 3 additional trains
-        let maxTrainsToShow = min(4, trainSchedules.count) // Show up to 4 trains total (1 + 3 additional)
+        // Add up to the configured number of additional trains
+        let preferences = PreferencesManager.shared.preferences
+        let totalTrainsToShow = preferences.upcomingItemsCount + 1 // First train + additional trains
+        let maxTrainsToShow = min(totalTrainsToShow, trainSchedules.count)
         
         if trainSchedules.count > 1 {
             menu.addItem(NSMenuItem.separator())

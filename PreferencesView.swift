@@ -3,6 +3,7 @@ import SwiftUI
 struct PreferencesView: View {
     @State private var selectedFromStation: String
     @State private var selectedToStation: String
+    @State private var upcomingItemsCount: Int
     @State private var isPresented: Bool = true
     @State private var stations: [Station] = Station.allStations
     @State private var isLoading: Bool = false
@@ -14,48 +15,72 @@ struct PreferencesView: View {
         let preferences = PreferencesManager.shared.preferences
         _selectedFromStation = State(initialValue: preferences.fromStation)
         _selectedToStation = State(initialValue: preferences.toStation)
+        _upcomingItemsCount = State(initialValue: preferences.upcomingItemsCount)
         self.window = window
     }
     
     var body: some View {
-        VStack(spacing: 20) {
-            Text("Train Schedule Preferences")
-                .font(.headline)
-                .padding(.top)
+        VStack(spacing: 0) {
+            Spacer().frame(height: 20)
             
             if isLoading {
                 ProgressView("Loading stations...")
                     .padding()
+                    .frame(maxWidth: .infinity)
             } else {
-                VStack(alignment: .leading, spacing: 10) {
-                    Picker("From Station", selection: $selectedFromStation) {
-                        ForEach(stations) { station in
-                            Text("\(station.name)").tag(station.id)
+                VStack(spacing: 20) {
+                    HStack(alignment: .center) {
+                        Text("From Station")
+                            .frame(width: 100, alignment: .leading)
+                        
+                        Picker("", selection: $selectedFromStation) {
+                            ForEach(stations) { station in
+                                Text("\(station.name)").tag(station.id)
+                            }
                         }
+                        .pickerStyle(PopUpButtonPickerStyle())
+                        .frame(maxWidth: .infinity)
                     }
-                    .pickerStyle(PopUpButtonPickerStyle())
-                    .frame(maxWidth: .infinity)
                     
-                    Picker("To Station", selection: $selectedToStation) {
-                        ForEach(stations) { station in
-                            Text("\(station.name)").tag(station.id)
+                    HStack(alignment: .center) {
+                        Text("To Station")
+                            .frame(width: 100, alignment: .leading)
+                        
+                        Picker("", selection: $selectedToStation) {
+                            ForEach(stations) { station in
+                                Text("\(station.name)").tag(station.id)
+                            }
                         }
+                        .pickerStyle(PopUpButtonPickerStyle())
+                        .frame(maxWidth: .infinity)
                     }
-                    .pickerStyle(PopUpButtonPickerStyle())
-                    .frame(maxWidth: .infinity)
+                    
+                    HStack(alignment: .center) {
+                        Text("Upcoming Items")
+                            .frame(width: 100, alignment: .leading)
+                        
+                        Stepper("\(upcomingItemsCount)", value: $upcomingItemsCount, in: 1...10)
+                            .frame(maxWidth: .infinity)
+                    }
                 }
-                .padding(.horizontal)
+                .padding(.horizontal, 20)
             }
             
-            HStack {
+            Spacer()
+            
+            // Bottom buttons with consistent spacing
+            HStack(spacing: 20) {
                 Button("Cancel") {
                     closeWindow()
                 }
+                .buttonStyle(.bordered)
+                .frame(width: 100)
                 
                 Button("Save") {
                     PreferencesManager.shared.savePreferences(
                         fromStation: selectedFromStation,
-                        toStation: selectedToStation
+                        toStation: selectedToStation,
+                        upcomingItemsCount: upcomingItemsCount
                     )
                     
                     // Notify the app to refresh train schedules with new preferences
@@ -64,11 +89,13 @@ struct PreferencesView: View {
                     closeWindow()
                 }
                 .buttonStyle(PrimaryButtonStyle())
+                .frame(width: 100)
                 .disabled(isLoading)
             }
-            .padding(.bottom)
+            .frame(maxWidth: .infinity)  // This ensures the HStack takes the full width
+            .padding(.bottom, 20)
         }
-        .frame(width: 400, height: 250)
+        .frame(width: 400, height: 250) // Adjusted height since we removed the title
         .onAppear {
             loadStations()
         }

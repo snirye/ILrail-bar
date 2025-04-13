@@ -3,10 +3,12 @@ import Foundation
 struct StationPreferences: Codable {
     var fromStation: String
     var toStation: String
+    var upcomingItemsCount: Int
     
     static let defaultPreferences = StationPreferences(
         fromStation: "3700",  // Default from station
-        toStation: "2300"     // Default to station
+        toStation: "2300",    // Default to station
+        upcomingItemsCount: 3 // Default number of upcoming trains to show
     )
 }
 
@@ -33,8 +35,8 @@ class PreferencesManager {
         }
     }
     
-    func savePreferences(fromStation: String, toStation: String) {
-        preferences = StationPreferences(fromStation: fromStation, toStation: toStation)
+    func savePreferences(fromStation: String, toStation: String, upcomingItemsCount: Int = 3) {
+        preferences = StationPreferences(fromStation: fromStation, toStation: toStation, upcomingItemsCount: upcomingItemsCount)
     }
 }
 
