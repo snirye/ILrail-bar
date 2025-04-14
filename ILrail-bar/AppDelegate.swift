@@ -7,7 +7,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
     private var trainScheduleTimer: Timer?
     private let networkManager = NetworkManager()
     private var preferencesWindow: NSWindow?
-    private var preferencesControls: [String: NSPopUpButton]?
     private var aboutWindow: NSWindow?
     
     // Constants
@@ -166,41 +165,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         // Additional debugging - print window position
         let windowFrame = window.frame
         logDebug("Window frame after positioning: \(windowFrame)")
-    }
-    
-    @objc func savePreferences(_ sender: NSButton) {
-        // Access controls from the stored property
-        guard let controls = preferencesControls,
-              let fromPopup = controls["fromPopup"],
-              let toPopup = controls["toPopup"] else {
-            logError("Error: Could not access controls")
-            return
-        }
-        
-        // Get the selected station IDs
-        let selectedFromIndex = fromPopup.indexOfSelectedItem
-        let selectedToIndex = toPopup.indexOfSelectedItem
-        
-        if selectedFromIndex >= 0 && selectedFromIndex < Station.allStations.count &&
-           selectedToIndex >= 0 && selectedToIndex < Station.allStations.count {
-            
-            let fromStation = Station.allStations[selectedFromIndex]
-            let toStation = Station.allStations[selectedToIndex]
-            
-            // Save preferences
-            PreferencesManager.shared.savePreferences(
-                fromStation: fromStation.id,
-                toStation: toStation.id
-            )
-            
-            // Notify that preferences changed
-            NotificationCenter.default.post(name: .preferencesChanged, object: nil)
-            
-            logInfo("Saved preferences: from=\(fromStation.name) to=\(toStation.name)")
-        }
-        
-        // Close the window
-        sender.window?.close()
     }
     
     @objc private func preferencesChanged() {
@@ -463,20 +427,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         aboutWindow = window
     }
     
-    @objc func openGitHub() {
-        // Replace with your actual GitHub URL
-        if let url = URL(string: "https://github.com/danny") {
-            NSWorkspace.shared.open(url)
-        }
-    }
-    
-    @objc func openLinkedIn() {
-        // Replace with your actual LinkedIn URL
-        if let url = URL(string: "https://linkedin.com/in/danny") {
-            NSWorkspace.shared.open(url)
-        }
-    }
-    
     // MARK: - NSWindowDelegate
     
     func windowWillClose(_ notification: Notification) {
@@ -485,7 +435,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
            closingWindow === preferencesWindow {
             // Ensure the window is completely released
             preferencesWindow = nil
-            preferencesControls = nil
         }
         
         // If our about window is closing, clear the reference

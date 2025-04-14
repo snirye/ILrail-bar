@@ -29,22 +29,9 @@
 		3022A9742DAC6C860059F717 /* ILrail-barUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "ILrail-barUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		30B100672DAC742700F56685 /* Exceptions for "ILrail-bar" folder in "ILrail-bar" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Package.swift,
-			);
-			target = 3022A9582DAC6C850059F717 /* ILrail-bar */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		3022A95B2DAC6C850059F717 /* ILrail-bar */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				30B100672DAC742700F56685 /* Exceptions for "ILrail-bar" folder in "ILrail-bar" target */,
-			);
 			path = "ILrail-bar";
 			sourceTree = "<group>";
 		};
