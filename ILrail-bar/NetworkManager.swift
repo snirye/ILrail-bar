@@ -74,37 +74,12 @@ class NetworkManager {
                     let container = try decoder.singleValueContainer()
                     let dateString = try container.decode(String.self)
                     
-                    // Create a more flexible date formatter that can handle the API format
-                    let formatter = ISO8601DateFormatter()
-                    formatter.formatOptions = [.withInternetDateTime]
-                    
-                    if let date = formatter.date(from: dateString) {
+                    // Use the helper method to parse the date
+                    if let date = self.parseDate(dateString) {
                         return date
                     }
                     
-                    // Try different date formats with explicit time zone (Israel Standard Time)
-                    let dateFormatter = DateFormatter()
-                    dateFormatter.timeZone = TimeZone(identifier: "Asia/Jerusalem") ?? TimeZone.current
-                    
-                    // Try with the standard format
-                    dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
-                    if let date = dateFormatter.date(from: dateString) {
-                        return date
-                    }
-                    
-                    // Try with additional formats that might be returned by the API
-                    dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS"
-                    if let date = dateFormatter.date(from: dateString) {
-                        return date
-                    }
-                    
-                    // Try without the 'T' separator which might be used in some cases
-                    dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-                    if let date = dateFormatter.date(from: dateString) {
-                        return date
-                    }
-                    
-                    // Log the problematic date string to help with debugging
+                    // If we reach here, none of our formats worked
                     logWarning("Failed to parse date string: \(dateString)")
                     
                     throw DecodingError.dataCorrupted(
@@ -180,5 +155,39 @@ class NetworkManager {
                 completion(.failure(NetworkError.decodingError))
             }
         }.resume()
+    }
+    
+    // Helper method to parse dates from various potential formats
+    private func parseDate(_ dateString: String) -> Date? {
+        // Israel Standard Time timezone
+        let israelTimeZone = TimeZone(identifier: "Asia/Jerusalem") ?? TimeZone.current
+        
+        // Try with ISO8601 formatter first
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime]
+        if let date = isoFormatter.date(from: dateString) {
+            return date
+        }
+        
+        // Create a reusable date formatter
+        let dateFormatter = DateFormatter()
+        dateFormatter.timeZone = israelTimeZone
+        
+        // Array of potential date formats
+        let formats = [
+            "yyyy-MM-dd'T'HH:mm:ss",
+            "yyyy-MM-dd'T'HH:mm:ss.SSS",
+            "yyyy-MM-dd HH:mm:ss"
+        ]
+        
+        // Try each format
+        for format in formats {
+            dateFormatter.dateFormat = format
+            if let date = dateFormatter.date(from: dateString) {
+                return date
+            }
+        }
+        
+        return nil
     }
 }

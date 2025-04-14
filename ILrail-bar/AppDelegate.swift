@@ -12,6 +12,97 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
     // Constants
     private let appRefreshInterval: TimeInterval = 300 // 5 minutes
     
+    // MARK: - Window Management Helper
+    
+    private func createAndShowWindow(
+        size: NSSize,
+        title: String,
+        styleMask: NSWindow.StyleMask,
+        center: Bool = false,
+        view: NSView,
+        storeIn windowRef: inout NSWindow?
+    ) {
+        // If a window already exists, just bring it to front
+        if let window = windowRef {
+            window.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+        
+        // Create a new window
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: size.width, height: size.height),
+            styleMask: styleMask,
+            backing: .buffered,
+            defer: false
+        )
+        
+        window.title = title
+        window.isReleasedWhenClosed = false
+        window.center()
+        
+        // Set self as the window delegate to handle close events
+        window.delegate = self
+        
+        // Set the content view
+        window.contentView = view
+        
+        // Store reference to prevent deallocation
+        windowRef = window
+        
+        // Make the window visible and active
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        
+        logDebug("\(title) window created and should be visible now")
+    }
+    
+    // MARK: - Menu Management Helper
+    
+    private func rebuildMenu(withTrainsOrError: Bool, errorItems: [NSMenuItem]? = nil, trainItems: [NSMenuItem]? = nil) {
+        // Keep track of important menu items
+        let importantItems = menu.items.filter { item in
+            return item.title == "Preferences..." || 
+                   item.title == "Refresh" || 
+                   item.title == "About" ||
+                   item.title == "Quit" ||
+                   item.isSeparatorItem
+        }
+        
+        // Clear all items
+        menu.removeAllItems()
+        
+        // Add separator at the top
+        menu.addItem(NSMenuItem.separator())
+        
+        // Add train information or error items
+        if withTrainsOrError {
+            if let trainItems = trainItems {
+                trainItems.forEach { menu.addItem($0) }
+            } else if let errorItems = errorItems {
+                errorItems.forEach { menu.addItem($0) }
+            }
+        }
+        
+        // Add a separator before the control items
+        menu.addItem(NSMenuItem.separator())
+        
+        // Restore important menu items
+        for item in importantItems {
+            if item.title == "Preferences..." || item.title == "Refresh" || item.title == "About" || item.title == "Quit" {
+                // Make sure our About menu item always has its action and target set
+                if item.title == "About" {
+                    item.action = #selector(showAbout(_:))
+                    item.target = self
+                }
+                menu.addItem(item)
+            } else if item.isSeparatorItem && menu.items.last?.title != nil {
+                // Add separators only between items, not after another separator
+                menu.addItem(NSMenuItem.separator())
+            }
+        }
+    }
+    
     // This method is called before applicationDidFinishLaunching
     func applicationWillFinishLaunching(_ notification: Notification) {
         // Set activation policy as early as possible
@@ -129,54 +220,25 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
     }
     
     @objc func showPreferences(_ sender: Any?) {
-        // If a preferences window already exists, just bring it to front
-        if let window = preferencesWindow {
-            window.makeKeyAndOrderFront(nil)
-            return
-        }
+        // Create a new hosting view with an instance of PreferencesView
+        // Pass nil for the window as we'll set it properly after creating it
+        let preferencesView = PreferencesView()
+        let hostingView = NSHostingView(rootView: preferencesView)
         
-        // Create a new window
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 400, height: 250),
+        createAndShowWindow(
+            size: NSSize(width: 400, height: 250),
+            title: "Preferences",
             styleMask: [.titled, .closable, .miniaturizable],
-            backing: .buffered,
-            defer: false
+            view: hostingView,
+            storeIn: &preferencesWindow
         )
         
-        // Explicitly position window on the main screen
-        if let mainScreen = NSScreen.main {
-            let screenFrame = mainScreen.visibleFrame
-            let windowFrame = window.frame
-            let x = screenFrame.origin.x + (screenFrame.width - windowFrame.width) / 2
-            let y = screenFrame.origin.y + (screenFrame.height - windowFrame.height) / 2
-            window.setFrameOrigin(NSPoint(x: x, y: y))
-            logDebug("Positioning window at x:\(x), y:\(y) on screen: \(screenFrame)")
-        } else {
-            window.center()
-            logWarning("No main screen found, using default center()")
+        // Now update the view with the correct window reference if needed
+        if let window = preferencesWindow, let rootView = hostingView.rootView as? PreferencesView {
+            // Access the underlying PreferencesView and update its window property
+            let updatedView = PreferencesView(window: window)
+            hostingView.rootView = updatedView
         }
-        
-        window.title = "Preferences"
-        window.isReleasedWhenClosed = false
-        window.delegate = self  // Set self as the window delegate
-        window.level = .floating  // Try to make it appear above other windows
-        
-        // Create and set the SwiftUI view as content
-        let preferencesView = PreferencesView(window: window)
-        let hostingView = NSHostingView(rootView: preferencesView)
-        window.contentView = hostingView
-        
-        window.makeKeyAndOrderFront(nil)
-        
-        // Store reference to prevent deallocation
-        preferencesWindow = window
-        
-        // Debug: verify window is created
-        logDebug("Preferences window created and should be visible now")
-        
-        // Additional debugging - print window position
-        let windowFrame = window.frame
-        logDebug("Window frame after positioning: \(windowFrame)")
     }
     
     @objc private func preferencesChanged() {
@@ -205,22 +267,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
     }
     
     private func updateMenuBarWithTrains(_ trainSchedules: [TrainSchedule]) {
-        // Keep track of important menu items
-        let importantItems = menu.items.filter { item in
-            return item.title == "Preferences..." || 
-                   item.title == "Refresh" || 
-                   item.title == "About" ||
-                   item.title == "Quit" ||
-                   item.isSeparatorItem
-        }
-        
-        // Clear all items
-        menu.removeAllItems()
-        
-        // Add separator at the top
-        menu.addItem(NSMenuItem.separator())
-        
-        // Add train information
+        // Create train menu items
+        var trainItems: [NSMenuItem] = []
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
         
@@ -258,7 +306,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
             keyEquivalent: ""
         )
         firstTrainInfoItem.attributedTitle = firstTrainAttrString
-        menu.addItem(firstTrainInfoItem)
+        trainItems.append(firstTrainInfoItem)
         
         // Add up to the configured number of additional trains
         let preferences = PreferencesManager.shared.preferences
@@ -266,8 +314,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         let maxTrainsToShow = min(totalTrainsToShow, trainSchedules.count)
         
         if trainSchedules.count > 1 {
-            menu.addItem(NSMenuItem.separator())
-            menu.addItem(NSMenuItem(title: "Upcoming:", action: nil, keyEquivalent: ""))
+            trainItems.append(NSMenuItem.separator())
+            trainItems.append(NSMenuItem(title: "Upcoming:", action: nil, keyEquivalent: ""))
             
             for i in 1..<maxTrainsToShow {
                 let train = trainSchedules[i]
@@ -300,27 +348,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
                     keyEquivalent: ""
                 )
                 trainInfoItem.attributedTitle = trainAttrString
-                menu.addItem(trainInfoItem)
+                trainItems.append(trainInfoItem)
             }
         }
         
-        // Add a separator before the control items
-        menu.addItem(NSMenuItem.separator())
-        
-        // Restore important menu items
-        for item in importantItems {
-            if item.title == "Preferences..." || item.title == "Refresh" || item.title == "About" || item.title == "Quit" {
-                // Make sure our About menu item always has its action and target set
-                if item.title == "About" {
-                    item.action = #selector(showAbout(_:))
-                    item.target = self
-                }
-                menu.addItem(item)
-            } else if item.isSeparatorItem && menu.items.last?.title != nil {
-                // Add separators only between items, not after another separator
-                menu.addItem(NSMenuItem.separator())
-            }
-        }
+        // Use the helper method to rebuild the menu
+        rebuildMenu(withTrainsOrError: true, trainItems: trainItems)
         
         // Set status bar title with color based on time until departure
         if let button = statusItem.button {
@@ -350,52 +383,23 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
     }
     
     private func updateMenuBarWithError(_ message: String) {
-        // Keep track of important menu items
-        let importantItems = menu.items.filter { item in
-            return item.title == "Preferences..." || 
-                   item.title == "Refresh" || 
-                   item.title == "About" ||
-                   item.title == "Quit" ||
-                   item.isSeparatorItem
-        }
-        
-        // Clear all items
-        menu.removeAllItems()
-        
-        // Add separator at the top
-        menu.addItem(NSMenuItem.separator())
+        // Create error menu items
+        var errorItems: [NSMenuItem] = []
         
         // Add error information
         let errorItem = NSMenuItem(title: "Error: " + message, action: nil, keyEquivalent: "")
-        menu.addItem(errorItem)
+        errorItems.append(errorItem)
         
         // Add a retry option
         let retryItem = NSMenuItem(title: "Retry connection", action: #selector(fetchTrainSchedule), keyEquivalent: "")
         retryItem.target = self
-        menu.addItem(retryItem)
+        errorItems.append(retryItem)
         
-        // Add a separator before the control items
-        menu.addItem(NSMenuItem.separator())
-        
-        // Restore important menu items
-        for item in importantItems {
-            if item.title == "Preferences..." || item.title == "Refresh" || item.title == "About" || item.title == "Quit" {
-                // Make sure our About menu item always has its action and target set
-                if item.title == "About" {
-                    item.action = #selector(showAbout(_:))
-                    item.target = self
-                }
-                menu.addItem(item)
-            } else if item.isSeparatorItem && menu.items.last?.title != nil {
-                // Add separators only between items, not after another separator
-                menu.addItem(NSMenuItem.separator())
-            }
-        }
+        // Use the helper method to rebuild the menu
+        rebuildMenu(withTrainsOrError: true, errorItems: errorItems)
         
         // Update status bar with error indicator
         if let button = statusItem.button {
-            button.title = " Error"
-            
             // Use red color for the error indication
             button.attributedTitle = NSAttributedString(
                 string: " Error",
@@ -405,35 +409,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
     }
     
     @objc func showAbout(_ sender: Any?) {      
-        // If an about window already exists, just bring it to front
-        if let window = aboutWindow {
-            window.makeKeyAndOrderFront(nil)
-            return
-        }
-        
-        // Create a new window for the About dialog
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 350, height: 350),
-            styleMask: [.titled, .closable],
-            backing: .buffered,
-            defer: false
-        )
-        
-        window.title = "About"
-        window.center()
-        window.isReleasedWhenClosed = false
-        window.delegate = self  // Set self as the window delegate
-        window.level = .floating  // Try to make it appear above other windows
-        
-        // Create and set the SwiftUI view as content
-        let aboutView = AboutView(window: window)
+        let aboutView = AboutView(window: aboutWindow ?? NSWindow())
         let hostingView = NSHostingView(rootView: aboutView)
-        window.contentView = hostingView
-        
-        window.makeKeyAndOrderFront(nil)
-        
-        // Store reference to prevent deallocation
-        aboutWindow = window
+        createAndShowWindow(
+            size: NSSize(width: 350, height: 350),
+            title: "About",
+            styleMask: [.titled, .closable],
+            center: true,
+            view: hostingView,
+            storeIn: &aboutWindow
+        )
     }
     
     // MARK: - NSWindowDelegate
