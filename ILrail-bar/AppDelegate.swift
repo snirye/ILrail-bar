@@ -322,10 +322,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
                     attributes: [NSAttributedString.Key.foregroundColor: NSColor.systemRed]
                 )
             } else if timeUntilDeparture < 30 {
-                // Less than 30 minutes - use orange
+                // Less than 30 minutes - use blue
                 button.attributedTitle = NSAttributedString(
                     string: " " + departureTimeString,
-                    attributes: [NSAttributedString.Key.foregroundColor: NSColor.systemOrange]
+                    attributes: [NSAttributedString.Key.foregroundColor: NSColor.systemBlue]
                 )
             } else {
                 // More than 30 minutes - use default system color
@@ -480,8 +480,8 @@ struct AboutView: View {
                     }
                     
                     HStack(spacing: 5) {
-                        Text("Orange")
-                            .foregroundColor(.orange)
+                        Text("Blue")
+                            .foregroundColor(.blue)
                             .fontWeight(.medium)
                         Text("- Train departing in less than 30 minutes")
                     }
