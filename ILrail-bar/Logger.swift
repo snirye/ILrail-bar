@@ -1,4 +1,3 @@
-// filepath: /Users/danny/devel/playground/ILrail-bar/Logger.swift
 import Foundation
 import os.log
 

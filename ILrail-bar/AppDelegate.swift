@@ -12,6 +12,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
     // Constants
     private let appRefreshInterval: TimeInterval = 300 // 5 minutes
     
+    // This method is called before applicationDidFinishLaunching
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        // Set activation policy as early as possible
+        NSApp.setActivationPolicy(.accessory)
+    }
+    
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Fetch station data as soon as the app starts
         fetchStationData()
@@ -29,6 +35,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
             name: .preferencesChanged,
             object: nil
         )
+    }
+    
+    // Handle when user attempts to open the app again while it's already running
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        // Ensure activation policy is still .accessory
+        NSApp.setActivationPolicy(.accessory)
+        
+        #if DEBUG
+        // In debug mode, don't show any window when app is reopened to prevent double-opening in Xcode
+        logDebug("App reopened in DEBUG mode - skipping window display")
+        return true
+        #else
+        // Show about window when app is reopened
+        showAbout(nil)
+        return true
+        #endif
     }
     
     private func fetchStationData() {
@@ -110,14 +132,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         // If a preferences window already exists, just bring it to front
         if let window = preferencesWindow {
             window.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
-            
-            // Add more debugging - print window position
-            if let screenFrame = NSScreen.main?.frame {
-                let windowFrame = window.frame
-                logDebug("Main screen: \(screenFrame)")
-                logDebug("Window frame: \(windowFrame)")
-            }
             return
         }
         
@@ -152,8 +166,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         let hostingView = NSHostingView(rootView: preferencesView)
         window.contentView = hostingView
         
-        // Make the app active and show the window
-        NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
         
         // Store reference to prevent deallocation
@@ -396,13 +408,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         // If an about window already exists, just bring it to front
         if let window = aboutWindow {
             window.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
             return
         }
         
         // Create a new window for the About dialog
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 350, height: 350),  // Increased height for the image
+            contentRect: NSRect(x: 0, y: 0, width: 350, height: 350),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
@@ -419,8 +430,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         let hostingView = NSHostingView(rootView: aboutView)
         window.contentView = hostingView
         
-        // Make the app active and show the window
-        NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
         
         // Store reference to prevent deallocation

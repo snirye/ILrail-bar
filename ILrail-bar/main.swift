@@ -8,9 +8,5 @@ let app = NSApplication.shared
 let appDelegate = AppDelegate()
 app.delegate = appDelegate
 
-// This is critical for a menubar-only app - it prevents 
-// the app from showing in the dock regardless of Info.plist settings
-NSApp.setActivationPolicy(.accessory)
-
 // Run the application
 app.run()
