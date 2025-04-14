@@ -5,7 +5,7 @@ struct AboutView: View {
     let window: NSWindow
     
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 0) {
             Image(systemName: "tram.fill")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
@@ -51,6 +51,15 @@ struct AboutView: View {
                         Text("(1+)")
                             .fontWeight(.medium)
                         Text("- Train changes required")
+                    }
+
+                    Divider()
+                        .padding(.vertical, 4)
+
+                    HStack(spacing: 5) {
+                        Text("[minutes]")
+                            .fontWeight(.medium)
+                        Text("- Travel time")
                     }
                 }
                 .padding(8)
