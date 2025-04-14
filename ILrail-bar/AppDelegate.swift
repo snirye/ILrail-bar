@@ -12,8 +12,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
     // Constants
     private let appRefreshInterval: TimeInterval = 300 // 5 minutes
     
-    // MARK: - Window Management Helper
-    
     private func createAndShowWindow(
         size: NSSize,
         title: String,
@@ -56,8 +54,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         
         logDebug("\(title) window created and should be visible now")
     }
-    
-    // MARK: - Menu Management Helper
     
     private func rebuildMenu(withTrainsOrError: Bool, errorItems: [NSMenuItem]? = nil, trainItems: [NSMenuItem]? = nil) {
         // Keep track of important menu items
@@ -266,23 +262,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         }
     }
     
-    // Helper function to format travel time
-    private func formatTravelTime(from departureTime: Date, to arrivalTime: Date) -> String {
-        let travelTimeInMinutes = Int(arrivalTime.timeIntervalSince(departureTime) / 60)
-        
-        if travelTimeInMinutes >= 60 {
-            let hours = travelTimeInMinutes / 60
-            let minutes = travelTimeInMinutes % 60
-            if minutes == 0 {
-                return "\(hours)h"
-            } else {
-                return "\(hours)h \(minutes)m"
-            }
-        } else {
-            return "\(travelTimeInMinutes)m"
-        }
-    }
-    
     // Helper functions to create small-sized attributed text and append it
     private func createSmallText(_ text: String) -> NSAttributedString {
         return NSAttributedString(string: text, attributes: [
@@ -297,21 +276,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
     private func updateMenuBarWithTrains(_ trainSchedules: [TrainSchedule]) {
         // Create train menu items
         var trainItems: [NSMenuItem] = []
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
         
         // Get the first train for the status bar display
         let firstTrain = trainSchedules[0]
         let timeUntilDeparture = firstTrain.departureTime.timeIntervalSinceNow / 60 // in minutes
         
         // Display the next train
-        let travelTime = formatTravelTime(from: firstTrain.departureTime, to: firstTrain.arrivalTime)
-        let firstTrainTitle = "Next: \(formatter.string(from: firstTrain.departureTime)) → \(formatter.string(from: firstTrain.arrivalTime)) (\(firstTrain.trainChanges))"
+        let _travelTime = DateFormatters.formatTravelTime(from: firstTrain.departureTime, to: firstTrain.arrivalTime)
+        let _departureTime = DateFormatters.timeFormatter.string(from: firstTrain.departureTime)
+        let _arrivalTime = DateFormatters.timeFormatter.string(from: firstTrain.arrivalTime)
+
+        let firstTrainTitle = "Next: \(_departureTime) → \(_arrivalTime) (\(firstTrain.trainChanges))"
         
         // Create an attributed string for the first train info
         let firstTrainAttrString = NSMutableAttributedString(string: firstTrainTitle)
         
-        appendSmallText(" [\(travelTime)]", to: firstTrainAttrString)
+        appendSmallText(" [\(_travelTime)]", to: firstTrainAttrString)
         
         if firstTrain.trainChanges > 0 && !firstTrain.allTrainNumbers.isEmpty {
             let trainNumbersString = firstTrain.allTrainNumbers.map { "#\($0)" }.joined(separator: ", ")
@@ -341,11 +321,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
                 let train = trainSchedules[i]
                 
                 // Create the basic train info title
-                let travelTime = formatTravelTime(from: train.departureTime, to: train.arrivalTime)
-                let trainBaseTitle = "\(formatter.string(from: train.departureTime)) → \(formatter.string(from: train.arrivalTime)) (\(train.trainChanges))"
+                let _travelTime = DateFormatters.formatTravelTime(from: train.departureTime, to: train.arrivalTime)
+                let _departureTime = DateFormatters.timeFormatter.string(from: train.departureTime)
+                let _arrivalTime = DateFormatters.timeFormatter.string(from: train.arrivalTime)
+
+                let trainBaseTitle = "\(_departureTime) → \(_arrivalTime) (\(train.trainChanges))"
                 let trainAttrString = NSMutableAttributedString(string: trainBaseTitle)
                 
-                appendSmallText(" [\(travelTime)]", to: trainAttrString)
+                appendSmallText(" [\(_travelTime)]", to: trainAttrString)
                 
                 if train.trainChanges > 0 && !train.allTrainNumbers.isEmpty {
                     let trainNumbersString = train.allTrainNumbers.map { "#\($0)" }.joined(separator: ", ")
@@ -362,14 +345,37 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
                 trainInfoItem.attributedTitle = trainAttrString
                 trainItems.append(trainInfoItem)
             }
+            
+            trainItems.append(NSMenuItem.separator())
+            
+            let currentDate = Date()
+            let currentDateStr = DateFormatters.dateFormatter.string(from: currentDate)
+            
+            let hours = Calendar.current.component(.hour, from: currentDate)
+            let minutes = Calendar.current.component(.minute, from: currentDate)
+            
+            let officialSiteUrl = URL(string: "https://www.rail.co.il/?" +
+                                      "page=routePlanSearchResults" +
+                                      "&fromStation=\(preferences.fromStation)" +
+                                      "&toStation=\(preferences.toStation)" +
+                                      "&date=\(currentDateStr)" +
+                                      "&hours=\(hours)" +
+                                      "&minutes=\(minutes)" +
+                                      "&scheduleType=1"
+                                    )
+            
+            let websiteItem = NSMenuItem(title: "View on Official website", action: #selector(openRailWebsite(_:)), keyEquivalent: "")
+            websiteItem.representedObject = officialSiteUrl
+            websiteItem.target = self
+            websiteItem.image = NSImage(systemSymbolName: "safari", accessibilityDescription: "Web browser")
+            trainItems.append(websiteItem)
         }
         
         // Use the helper method to rebuild the menu
         rebuildMenu(withTrainsOrError: true, trainItems: trainItems)
         
-        // Set status bar title with color based on time until departure
         if let button = statusItem.button {
-            let departureTimeString = formatter.string(from: firstTrain.departureTime)
+            let departureTimeString = DateFormatters.timeFormatter.string(from: firstTrain.departureTime)
             
             if timeUntilDeparture < 15 {
                 // Less than 15 minutes - use red
@@ -432,7 +438,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         )
     }
     
-    // MARK: - NSWindowDelegate
+    @objc private func openRailWebsite(_ sender: NSMenuItem) {
+        if let url = sender.representedObject as? URL {
+            NSWorkspace.shared.open(url)
+        }
+    }
+    
     
     func windowWillClose(_ notification: Notification) {
         // If our preferences window is closing, clear the reference
@@ -456,92 +467,5 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
             return true
         }
         return true
-    }
-}
-
-// A simple SwiftUI view for the About dialog
-struct AboutView: View {
-    let window: NSWindow
-    
-    var body: some View {
-        VStack(spacing: 10) {
-            Image(systemName: "tram.fill")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 100, height: 100)
-            
-            GroupBox(label: 
-                Text("Legend:")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.bottom, 4)
-            ) {
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 5) {
-                        Text("Red")
-                            .foregroundColor(.red)
-                            .fontWeight(.medium)
-                        Text("- Train departing in less than 15 minutes")
-                    }
-                    
-                    HStack(spacing: 5) {
-                        Text("Blue")
-                            .foregroundColor(.blue)
-                            .fontWeight(.medium)
-                        Text("- Train departing in less than 30 minutes")
-                    }
-                    
-                    HStack(spacing: 5) {
-                        Text("Default")
-                            .fontWeight(.medium)
-                        Text("- Train departing in 30+ minutes")
-                    }
-                    
-                    Divider()
-                        .padding(.vertical, 4)
-                    
-                    HStack(spacing: 5) {
-                        Text("(0)")
-                            .fontWeight(.medium)
-                        Text("- No train changes required")
-                    }
-                    
-                    HStack(spacing: 5) {
-                        Text("(1+)")
-                            .fontWeight(.medium)
-                        Text("- Train changes required")
-                    }
-                }
-                .padding(8)
-            }
-            .padding(.horizontal, 4)
-            
-            HStack(spacing: 30) {
-                Button(action: {
-                    if let url = URL(string: "https://github.com/drehelis") {
-                        NSWorkspace.shared.open(url)
-                    }
-                }) {
-                    Text("Github")
-                        .font(.headline)
-                }
-                .buttonStyle(PlainButtonStyle())
-                
-                Button(action: {
-                    if let url = URL(string: "https://linkedin.com/in/drehelis") {
-                        NSWorkspace.shared.open(url)
-                    }
-                }) {
-                    Text("LinkedIn")
-                        .font(.headline)
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
-            .padding(.top, 10)
-            
-            Spacer()
-        }
-        .padding()
-        .frame(width: 350, height: 400)
     }
 }
