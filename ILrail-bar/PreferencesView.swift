@@ -1,9 +1,11 @@
 import SwiftUI
+import ServiceManagement
 
 struct PreferencesView: View {
     @State private var selectedFromStation: String
     @State private var selectedToStation: String
     @State private var upcomingItemsCount: Int
+    @State private var launchAtLogin: Bool
     @State private var isPresented: Bool = true
     @State private var stations: [Station] = Station.allStations
     @State private var isLoading: Bool = false
@@ -16,6 +18,7 @@ struct PreferencesView: View {
         _selectedFromStation = State(initialValue: preferences.fromStation)
         _selectedToStation = State(initialValue: preferences.toStation)
         _upcomingItemsCount = State(initialValue: preferences.upcomingItemsCount)
+        _launchAtLogin = State(initialValue: preferences.launchAtLogin)
         self.window = window
     }
     
@@ -29,6 +32,16 @@ struct PreferencesView: View {
                     .frame(maxWidth: .infinity)
             } else {
                 VStack(spacing: 20) {
+                    HStack(alignment: .center) {
+                        Text("Launch at Login")
+                            .frame(width: 105, alignment: .leading)
+                        
+                        Toggle("", isOn: $launchAtLogin)
+                            .labelsHidden()
+                            .padding(.leading, 4)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    
                     HStack(alignment: .center) {
                         Text("From Station")
                             .frame(width: 100, alignment: .leading)
@@ -59,8 +72,14 @@ struct PreferencesView: View {
                         Text("Upcoming Items")
                             .frame(width: 100, alignment: .leading)
                         
-                        Stepper("\(upcomingItemsCount)", value: $upcomingItemsCount, in: 1...10)
-                            .frame(maxWidth: .infinity)
+                        // Replace the regular Stepper with a custom layout that aligns the number with the stepper buttons
+                        HStack(spacing: 5) {
+                            Text("\(upcomingItemsCount)")
+                                .frame(minWidth: 20, alignment: .trailing)
+                            Stepper("", value: $upcomingItemsCount, in: 1...10)
+                                .labelsHidden()
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
                 .padding(.horizontal, 20)
@@ -77,11 +96,16 @@ struct PreferencesView: View {
                 .frame(width: 100)
                 
                 Button("Save") {
+                    // Save preferences
                     PreferencesManager.shared.savePreferences(
                         fromStation: selectedFromStation,
                         toStation: selectedToStation,
-                        upcomingItemsCount: upcomingItemsCount
+                        upcomingItemsCount: upcomingItemsCount,
+                        launchAtLogin: launchAtLogin
                     )
+                    
+                    // Configure launch at login
+                    updateLaunchAtLogin(launchAtLogin)
                     
                     // Notify the app to refresh train schedules with new preferences
                     NotificationCenter.default.post(name: .preferencesChanged, object: nil)
@@ -151,6 +175,21 @@ struct PreferencesView: View {
     
     private func closeWindow() {
         window?.close()
+    }
+    
+    private func updateLaunchAtLogin(_ enabled: Bool) {
+        do {
+            if enabled {
+                try SMAppService.mainApp.register()
+                logInfo("Launch at login enabled")
+
+            } else {
+                try SMAppService.mainApp.unregister()
+                logInfo("Launch at login disabled")
+            }
+        } catch {
+            logError("Failed to \(enabled ? "register" : "unregister") launch at login: \(error.localizedDescription)")
+        }
     }
 }
 

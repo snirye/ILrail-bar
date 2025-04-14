@@ -234,7 +234,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         )
         
         // Now update the view with the correct window reference if needed
-        if let window = preferencesWindow, let rootView = hostingView.rootView as? PreferencesView {
+        if let window = preferencesWindow {
             // Access the underlying PreferencesView and update its window property
             let updatedView = PreferencesView(window: window)
             hostingView.rootView = updatedView
