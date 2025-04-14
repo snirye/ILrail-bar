@@ -266,6 +266,34 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         }
     }
     
+    // Helper function to format travel time
+    private func formatTravelTime(from departureTime: Date, to arrivalTime: Date) -> String {
+        let travelTimeInMinutes = Int(arrivalTime.timeIntervalSince(departureTime) / 60)
+        
+        if travelTimeInMinutes >= 60 {
+            let hours = travelTimeInMinutes / 60
+            let minutes = travelTimeInMinutes % 60
+            if minutes == 0 {
+                return "\(hours)h"
+            } else {
+                return "\(hours)h \(minutes)m"
+            }
+        } else {
+            return "\(travelTimeInMinutes)m"
+        }
+    }
+    
+    // Helper functions to create small-sized attributed text and append it
+    private func createSmallText(_ text: String) -> NSAttributedString {
+        return NSAttributedString(string: text, attributes: [
+            .font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+        ])
+    }
+
+    private func appendSmallText(_ smallText: String, to attributedString: NSMutableAttributedString) {
+        attributedString.append(createSmallText(smallText))
+    }
+
     private func updateMenuBarWithTrains(_ trainSchedules: [TrainSchedule]) {
         // Create train menu items
         var trainItems: [NSMenuItem] = []
@@ -277,27 +305,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         let timeUntilDeparture = firstTrain.departureTime.timeIntervalSinceNow / 60 // in minutes
         
         // Display the next train
+        let travelTime = formatTravelTime(from: firstTrain.departureTime, to: firstTrain.arrivalTime)
         let firstTrainTitle = "Next: \(formatter.string(from: firstTrain.departureTime)) → \(formatter.string(from: firstTrain.arrivalTime)) (\(firstTrain.trainChanges))"
         
         // Create an attributed string for the first train info
         let firstTrainAttrString = NSMutableAttributedString(string: firstTrainTitle)
         
-        // Add train number information with smaller font
+        appendSmallText(" [\(travelTime)]", to: firstTrainAttrString)
+        
         if firstTrain.trainChanges > 0 && !firstTrain.allTrainNumbers.isEmpty {
-            // Format as: "(Train #7616, #1234, #4321)" with smaller font
             let trainNumbersString = firstTrain.allTrainNumbers.map { "#\($0)" }.joined(separator: ", ")
-            let trainNumberPart = " (\(trainNumbersString))"
-            let trainAttr = NSMutableAttributedString(string: trainNumberPart, attributes: [
-                .font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
-            ])
-            firstTrainAttrString.append(trainAttr)
+            appendSmallText(" (\(trainNumbersString))", to: firstTrainAttrString)
         } else if !firstTrain.trainNumber.isEmpty {
-            // For a single train, just use the original format but with smaller font
-            let trainNumberPart = " (#\(firstTrain.trainNumber))"
-            let trainAttr = NSMutableAttributedString(string: trainNumberPart, attributes: [
-                .font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
-            ])
-            firstTrainAttrString.append(trainAttr)
+            appendSmallText(" (#\(firstTrain.trainNumber))", to: firstTrainAttrString)
         }
         
         let firstTrainInfoItem = NSMenuItem(
@@ -321,25 +341,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
                 let train = trainSchedules[i]
                 
                 // Create the basic train info title
+                let travelTime = formatTravelTime(from: train.departureTime, to: train.arrivalTime)
                 let trainBaseTitle = "\(formatter.string(from: train.departureTime)) → \(formatter.string(from: train.arrivalTime)) (\(train.trainChanges))"
                 let trainAttrString = NSMutableAttributedString(string: trainBaseTitle)
                 
-                // Add train number information with smaller font
+                appendSmallText(" [\(travelTime)]", to: trainAttrString)
+                
                 if train.trainChanges > 0 && !train.allTrainNumbers.isEmpty {
-                    // Format as: "(Train #7616, #1234, #4321)" with smaller font
                     let trainNumbersString = train.allTrainNumbers.map { "#\($0)" }.joined(separator: ", ")
-                    let trainNumberPart = " (\(trainNumbersString))"
-                    let trainAttr = NSMutableAttributedString(string: trainNumberPart, attributes: [
-                        .font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
-                    ])
-                    trainAttrString.append(trainAttr)
+                    appendSmallText(" (\(trainNumbersString))", to: trainAttrString)
                 } else if !train.trainNumber.isEmpty {
-                    // For a single train, use smaller font
-                    let trainNumberPart = " (#\(train.trainNumber))"
-                    let trainAttr = NSMutableAttributedString(string: trainNumberPart, attributes: [
-                        .font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
-                    ])
-                    trainAttrString.append(trainAttr)
+                    appendSmallText(" (#\(train.trainNumber))", to: trainAttrString)
                 }
                 
                 let trainInfoItem = NSMenuItem(
@@ -359,7 +371,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         if let button = statusItem.button {
             let departureTimeString = formatter.string(from: firstTrain.departureTime)
             
-            // Set color based on time until departure
             if timeUntilDeparture < 15 {
                 // Less than 15 minutes - use red
                 button.attributedTitle = NSAttributedString(
