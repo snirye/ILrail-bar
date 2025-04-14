@@ -1,17 +1,561 @@
-# ILrail-bar.xcodeproj/project.pbxproj
 // !$*UTF8*$!
 {
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 77;
 	objects = {
-		F00000001 /* ILRailBarApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ILRailBarApp.swift; sourceTree = "<group>"; };
-		F00000002 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		F00000003 /* NetworkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkManager.swift; sourceTree = "<group>"; };
-		F00000004 /* TrainSchedule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainSchedule.swift; sourceTree = "<group>"; };
-		F00000005 /* APIModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIModels.swift; sourceTree = "<group>"; };
-		F00000006 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+
+/* Begin PBXContainerItemProxy section */
+		3022A96B2DAC6C860059F717 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3022A9512DAC6C850059F717 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3022A9582DAC6C850059F717;
+			remoteInfo = "ILrail-bar";
+		};
+		3022A9752DAC6C860059F717 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3022A9512DAC6C850059F717 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3022A9582DAC6C850059F717;
+			remoteInfo = "ILrail-bar";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		3022A9592DAC6C850059F717 /* ILrail-bar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "ILrail-bar.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		3022A96A2DAC6C860059F717 /* ILrail-barTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "ILrail-barTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		3022A9742DAC6C860059F717 /* ILrail-barUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "ILrail-barUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		30B100672DAC742700F56685 /* Exceptions for "ILrail-bar" folder in "ILrail-bar" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Package.swift,
+			);
+			target = 3022A9582DAC6C850059F717 /* ILrail-bar */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		3022A95B2DAC6C850059F717 /* ILrail-bar */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				30B100672DAC742700F56685 /* Exceptions for "ILrail-bar" folder in "ILrail-bar" target */,
+			);
+			path = "ILrail-bar";
+			sourceTree = "<group>";
+		};
+		3022A96D2DAC6C860059F717 /* ILrail-barTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "ILrail-barTests";
+			sourceTree = "<group>";
+		};
+		3022A9772DAC6C860059F717 /* ILrail-barUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "ILrail-barUITests";
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		3022A9562DAC6C850059F717 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3022A9672DAC6C860059F717 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3022A9712DAC6C860059F717 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		3022A9502DAC6C850059F717 = {
+			isa = PBXGroup;
+			children = (
+				3022A95B2DAC6C850059F717 /* ILrail-bar */,
+				3022A96D2DAC6C860059F717 /* ILrail-barTests */,
+				3022A9772DAC6C860059F717 /* ILrail-barUITests */,
+				3022A95A2DAC6C850059F717 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		3022A95A2DAC6C850059F717 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3022A9592DAC6C850059F717 /* ILrail-bar.app */,
+				3022A96A2DAC6C860059F717 /* ILrail-barTests.xctest */,
+				3022A9742DAC6C860059F717 /* ILrail-barUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		3022A9582DAC6C850059F717 /* ILrail-bar */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3022A97E2DAC6C860059F717 /* Build configuration list for PBXNativeTarget "ILrail-bar" */;
+			buildPhases = (
+				3022A9552DAC6C850059F717 /* Sources */,
+				3022A9562DAC6C850059F717 /* Frameworks */,
+				3022A9572DAC6C850059F717 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				3022A95B2DAC6C850059F717 /* ILrail-bar */,
+			);
+			name = "ILrail-bar";
+			packageProductDependencies = (
+			);
+			productName = "ILrail-bar";
+			productReference = 3022A9592DAC6C850059F717 /* ILrail-bar.app */;
+			productType = "com.apple.product-type.application";
+		};
+		3022A9692DAC6C860059F717 /* ILrail-barTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3022A9812DAC6C860059F717 /* Build configuration list for PBXNativeTarget "ILrail-barTests" */;
+			buildPhases = (
+				3022A9662DAC6C860059F717 /* Sources */,
+				3022A9672DAC6C860059F717 /* Frameworks */,
+				3022A9682DAC6C860059F717 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				3022A96C2DAC6C860059F717 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				3022A96D2DAC6C860059F717 /* ILrail-barTests */,
+			);
+			name = "ILrail-barTests";
+			packageProductDependencies = (
+			);
+			productName = "ILrail-barTests";
+			productReference = 3022A96A2DAC6C860059F717 /* ILrail-barTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		3022A9732DAC6C860059F717 /* ILrail-barUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3022A9842DAC6C860059F717 /* Build configuration list for PBXNativeTarget "ILrail-barUITests" */;
+			buildPhases = (
+				3022A9702DAC6C860059F717 /* Sources */,
+				3022A9712DAC6C860059F717 /* Frameworks */,
+				3022A9722DAC6C860059F717 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				3022A9762DAC6C860059F717 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				3022A9772DAC6C860059F717 /* ILrail-barUITests */,
+			);
+			name = "ILrail-barUITests";
+			packageProductDependencies = (
+			);
+			productName = "ILrail-barUITests";
+			productReference = 3022A9742DAC6C860059F717 /* ILrail-barUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		3022A9512DAC6C850059F717 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1620;
+				LastUpgradeCheck = 1620;
+				TargetAttributes = {
+					3022A9582DAC6C850059F717 = {
+						CreatedOnToolsVersion = 16.2;
+					};
+					3022A9692DAC6C860059F717 = {
+						CreatedOnToolsVersion = 16.2;
+						TestTargetID = 3022A9582DAC6C850059F717;
+					};
+					3022A9732DAC6C860059F717 = {
+						CreatedOnToolsVersion = 16.2;
+						TestTargetID = 3022A9582DAC6C850059F717;
+					};
+				};
+			};
+			buildConfigurationList = 3022A9542DAC6C850059F717 /* Build configuration list for PBXProject "ILrail-bar" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 3022A9502DAC6C850059F717;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 3022A95A2DAC6C850059F717 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				3022A9582DAC6C850059F717 /* ILrail-bar */,
+				3022A9692DAC6C860059F717 /* ILrail-barTests */,
+				3022A9732DAC6C860059F717 /* ILrail-barUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		3022A9572DAC6C850059F717 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3022A9682DAC6C860059F717 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3022A9722DAC6C860059F717 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		3022A9552DAC6C850059F717 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3022A9662DAC6C860059F717 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3022A9702DAC6C860059F717 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		3022A96C2DAC6C860059F717 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3022A9582DAC6C850059F717 /* ILrail-bar */;
+			targetProxy = 3022A96B2DAC6C860059F717 /* PBXContainerItemProxy */;
+		};
+		3022A9762DAC6C860059F717 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3022A9582DAC6C850059F717 /* ILrail-bar */;
+			targetProxy = 3022A9752DAC6C860059F717 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		3022A97C2DAC6C860059F717 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		3022A97D2DAC6C860059F717 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		3022A97F2DAC6C860059F717 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "ILrail-bar/ILrail_bar.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"ILrail-bar/Preview Content\"";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "il.co.liar.ILrail-bar";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		3022A9802DAC6C860059F717 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "ILrail-bar/ILrail_bar.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"ILrail-bar/Preview Content\"";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "il.co.liar.ILrail-bar";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		3022A9822DAC6C860059F717 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "il.co.liar.ILrail-barTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ILrail-bar.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ILrail-bar";
+			};
+			name = Debug;
+		};
+		3022A9832DAC6C860059F717 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "il.co.liar.ILrail-barTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ILrail-bar.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ILrail-bar";
+			};
+			name = Release;
+		};
+		3022A9852DAC6C860059F717 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "il.co.liar.ILrail-barUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = "ILrail-bar";
+			};
+			name = Debug;
+		};
+		3022A9862DAC6C860059F717 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "il.co.liar.ILrail-barUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = "ILrail-bar";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		3022A9542DAC6C850059F717 /* Build configuration list for PBXProject "ILrail-bar" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3022A97C2DAC6C860059F717 /* Debug */,
+				3022A97D2DAC6C860059F717 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3022A97E2DAC6C860059F717 /* Build configuration list for PBXNativeTarget "ILrail-bar" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3022A97F2DAC6C860059F717 /* Debug */,
+				3022A9802DAC6C860059F717 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3022A9812DAC6C860059F717 /* Build configuration list for PBXNativeTarget "ILrail-barTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3022A9822DAC6C860059F717 /* Debug */,
+				3022A9832DAC6C860059F717 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3022A9842DAC6C860059F717 /* Build configuration list for PBXNativeTarget "ILrail-barUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3022A9852DAC6C860059F717 /* Debug */,
+				3022A9862DAC6C860059F717 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
 	};
-	rootObject = F00000000 /* Project object */;
+	rootObject = 3022A9512DAC6C850059F717 /* Project object */;
 }
