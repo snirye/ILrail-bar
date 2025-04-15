@@ -226,6 +226,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
     }
     
     @objc private func fetchTrainSchedule() {
+        if let button = statusItem.button {
+            button.attributedTitle = NSAttributedString(
+                string: " Refresh...",
+                attributes: [
+                    NSAttributedString.Key.foregroundColor: NSColor.secondaryLabelColor,
+                    NSAttributedString.Key.font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+                ]
+            )
+        }
+        
         networkManager.fetchTrainSchedule { [weak self] result in
             guard let self = self else { return }
             
@@ -371,11 +381,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         let errorItem = NSMenuItem(title: "Error: " + message, action: nil, keyEquivalent: "")
         errorItems.append(errorItem)
         
-        // Add a retry option
-        let retryItem = NSMenuItem(title: "Retry connection", action: #selector(fetchTrainSchedule), keyEquivalent: "")
-        retryItem.target = self
-        errorItems.append(retryItem)
-        
         // Add a separator before the website link
         errorItems.append(NSMenuItem.separator())
         
@@ -387,10 +392,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         
         // Update status bar with error indicator
         if let button = statusItem.button {
-            // Use red color for the error indication
+            // Determine which message to show in the menubar
+            let noTrainFoundMessage = "No trains found" 
+            let menubarText = message == noTrainFoundMessage ? " No results" : " Error"            
+            let textColor = message == noTrainFoundMessage ? NSColor.labelColor : NSColor.systemRed
+            
             button.attributedTitle = NSAttributedString(
-                string: " Error",
-                attributes: [NSAttributedString.Key.foregroundColor: NSColor.systemRed]
+                string: menubarText,
+                attributes: [NSAttributedString.Key.foregroundColor: textColor]
             )
         }
     }
