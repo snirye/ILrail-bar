@@ -101,8 +101,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
     
     // This method is called before applicationDidFinishLaunching
     func applicationWillFinishLaunching(_ notification: Notification) {
-        // Set activation policy as early as possible
-        NSApp.setActivationPolicy(.accessory)
+        // LSUIElement is properly set in Info.plist, no need to explicitly set activation policy
     }
     
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -122,22 +121,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
             name: .preferencesChanged,
             object: nil
         )
-    }
-    
-    // Handle when user attempts to open the app again while it's already running
-    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        // Ensure activation policy is still .accessory
-        NSApp.setActivationPolicy(.accessory)
-        
-        #if DEBUG
-        // In debug mode, don't show any window when app is reopened to prevent double-opening in Xcode
-        logDebug("App reopened in DEBUG mode - skipping window display")
-        return true
-        #else
-        // Show about window when app is reopened
-        showAbout(nil)
-        return true
-        #endif
     }
     
     private func fetchStationData() {

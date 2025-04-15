@@ -4,11 +4,11 @@ BASE_DIR=/Users/danny/devel/playground/ILrail-bar
 DMG_TEMP_DIR=$(mktemp -d -t ilrail)
 APP_NAME="ILrail-bar"
 
-# Build the app
 pushd ${BASE_DIR}
 xcodebuild -project ${APP_NAME}.xcodeproj -configuration Release
 
-# Copy app to temporary folder
+ln -s /Applications "${DMG_TEMP_DIR}/Applications"
+
 cp -R ${BASE_DIR}/build/Release/${APP_NAME}.app ${DMG_TEMP_DIR}
 
 # Create a README file with instructions
