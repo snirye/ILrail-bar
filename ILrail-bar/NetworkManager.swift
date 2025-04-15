@@ -1,8 +1,26 @@
 import Foundation
 
+// API response models for stations
+struct StationResponse: Codable {
+    let creationDate: String
+    let version: String
+    let successStatus: Int
+    let statusCode: Int
+    let errorMessages: String?
+    let result: [RemoteStation]
+}
+
+struct RemoteStation: Codable {
+    let stationId: Int
+    let stationName: String
+}
+
 class NetworkManager {
+    static let shared = NetworkManager()
+    
     private let apiKey = "4b0d355121fe4e0bb3d86e902efe9f20"
-    private let baseURL = "https://israelrail.azurefd.net/rjpa-prod/api/v1/timetable/searchTrainLuzForDateTime"
+    private let timetableBaseURL = "https://israelrail.azurefd.net/rjpa-prod/api/v1/timetable/searchTrainLuzForDateTime"
+    private let stationsBaseURL = "https://israelrail.azurefd.net/common/api/v1/stations"
     
     private let languageId = "Hebrew"
     private let scheduleType = "1"
@@ -13,6 +31,73 @@ class NetworkManager {
         case noData
         case decodingError
         case serverError(String)
+    }
+    
+    // Fetch stations from the Israel Rail API
+    func fetchStations(completion: @escaping (Result<[RemoteStation], NetworkError>) -> Void) {
+        guard var components = URLComponents(string: stationsBaseURL) else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        
+        components.queryItems = [
+            URLQueryItem(name: "languageId", value: "English"),
+            URLQueryItem(name: "systemType", value: systemType)
+        ]
+        
+        guard let url = components.url else {
+            completion(.failure(.invalidURL))
+            return
+        }
+        
+        var request = URLRequest(url: url)
+        request.addValue("ILrail-bar/1.0 macOS", forHTTPHeaderField: "User-Agent")
+        request.addValue(apiKey, forHTTPHeaderField: "ocp-apim-subscription-key")
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            if let error = error {
+                logError("Error fetching stations: \(error.localizedDescription)")
+                completion(.failure(.serverError(error.localizedDescription)))
+                return
+            }
+            
+            guard let data = data else {
+                completion(.failure(.noData))
+                return
+            }
+            
+            if let httpResponse = response as? HTTPURLResponse, !(200...299).contains(httpResponse.statusCode) {
+                let errorMessage = String(data: data, encoding: .utf8) ?? "Unknown server error"
+                completion(.failure(.serverError(errorMessage)))
+                return
+            }
+            
+            do {
+                let response = try JSONDecoder().decode(StationResponse.self, from: data)
+                
+                // Cache the data for future use
+                UserDefaults.standard.set(data, forKey: "cachedStationsData")
+                
+                completion(.success(response.result))
+            } catch {
+                logError("Error decoding stations: \(error.localizedDescription)")
+                
+                // Try to decode the structure of the JSON to understand the format
+                do {
+                    if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+                        logDebug("JSON is a dictionary with keys: \(json.keys)")
+                    } else if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [[String: Any]] {
+                        logDebug("JSON is an array of dictionaries with \(json.count) items")
+                    } else {
+                        logDebug("JSON is in an unknown format")
+                    }
+                } catch {
+                    logError("Failed to parse JSON: \(error.localizedDescription)")
+                }
+                
+                completion(.failure(.decodingError))
+            }
+        }.resume()
     }
     
     func fetchTrainSchedule(completion: @escaping (Result<[TrainSchedule], Error>) -> Void) {
@@ -32,7 +117,7 @@ class NetworkManager {
         logInfo("Fetching trains from \(preferences.fromStation) to \(preferences.toStation)")
         
         // Construct URL with query parameters
-        var components = URLComponents(string: baseURL)
+        var components = URLComponents(string: timetableBaseURL)
         components?.queryItems = [
             URLQueryItem(name: "fromStation", value: preferences.fromStation),
             URLQueryItem(name: "toStation", value: preferences.toStation),
@@ -74,8 +159,7 @@ class NetworkManager {
                     let container = try decoder.singleValueContainer()
                     let dateString = try container.decode(String.self)
                     
-                    // Use the helper method to parse the date
-                    if let date = self.parseDate(dateString) {
+                    if let date = DateFormatters.parseDateFormats(dateString) {
                         return date
                     }
                     
@@ -155,39 +239,5 @@ class NetworkManager {
                 completion(.failure(NetworkError.decodingError))
             }
         }.resume()
-    }
-    
-    // Helper method to parse dates from various potential formats
-    private func parseDate(_ dateString: String) -> Date? {
-        // Israel Standard Time timezone
-        let israelTimeZone = TimeZone(identifier: "Asia/Jerusalem") ?? TimeZone.current
-        
-        // Try with ISO8601 formatter first
-        let isoFormatter = ISO8601DateFormatter()
-        isoFormatter.formatOptions = [.withInternetDateTime]
-        if let date = isoFormatter.date(from: dateString) {
-            return date
-        }
-        
-        // Create a reusable date formatter
-        let dateFormatter = DateFormatter()
-        dateFormatter.timeZone = israelTimeZone
-        
-        // Array of potential date formats
-        let formats = [
-            "yyyy-MM-dd'T'HH:mm:ss",
-            "yyyy-MM-dd'T'HH:mm:ss.SSS",
-            "yyyy-MM-dd HH:mm:ss"
-        ]
-        
-        // Try each format
-        for format in formats {
-            dateFormatter.dateFormat = format
-            if let date = dateFormatter.date(from: dateString) {
-                return date
-            }
-        }
-        
-        return nil
     }
 }

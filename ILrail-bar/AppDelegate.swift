@@ -290,8 +290,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
             keyEquivalent: ""
         )
         firstTrainInfoItem.attributedTitle = firstTrainAttrString
-        // trainItems.append(NSMenuItem(title: _routeDestination, action: nil, keyEquivalent: ""))
-        // trainItems.append(NSMenuItem.separator())
         trainItems.append(firstTrainInfoItem)
         
         // Add up to the configured number of additional trains
@@ -331,31 +329,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
                 trainInfoItem.attributedTitle = trainAttrString
                 trainItems.append(trainInfoItem)
             }
-            
-            trainItems.append(NSMenuItem.separator())
-            
-            let currentDate = Date()
-            let currentDateStr = DateFormatters.dateFormatter.string(from: currentDate)
-            
-            let hours = Calendar.current.component(.hour, from: currentDate)
-            let minutes = Calendar.current.component(.minute, from: currentDate)
-            
-            let officialSiteUrl = URL(string: "https://www.rail.co.il/?" +
-                                      "page=routePlanSearchResults" +
-                                      "&fromStation=\(preferences.fromStation)" +
-                                      "&toStation=\(preferences.toStation)" +
-                                      "&date=\(currentDateStr)" +
-                                      "&hours=\(hours)" +
-                                      "&minutes=\(minutes)" +
-                                      "&scheduleType=1"
-                                    )
-            
-            let websiteItem = NSMenuItem(title: "View on Official website", action: #selector(openRailWebsite(_:)), keyEquivalent: "")
-            websiteItem.representedObject = officialSiteUrl
-            websiteItem.target = self
-            websiteItem.image = NSImage(systemSymbolName: "safari", accessibilityDescription: "Web browser")
-            trainItems.append(websiteItem)
         }
+        
+        // Always add a separator and the website link
+        trainItems.append(NSMenuItem.separator())
+        trainItems.append(createWebsiteMenuItem())
         
         // Use the helper method to rebuild the menu
         rebuildMenu(withTrainsOrError: true, trainItems: trainItems)
@@ -398,6 +376,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         retryItem.target = self
         errorItems.append(retryItem)
         
+        // Add a separator before the website link
+        errorItems.append(NSMenuItem.separator())
+        
+        // Add link to the official website
+        errorItems.append(createWebsiteMenuItem())
+        
         // Use the helper method to rebuild the menu
         rebuildMenu(withTrainsOrError: true, errorItems: errorItems)
         
@@ -430,6 +414,35 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         }
     }
     
+    // Helper method to create the "View on Official website" menu item
+    private func createWebsiteMenuItem() -> NSMenuItem {
+        let preferences = PreferencesManager.shared.preferences
+        let currentDate = Date()
+        let currentDateStr = DateFormatters.dateFormatter.string(from: currentDate)
+        
+        // Use DateFormatters.timeFormatter to get the time string
+        let timeStr = DateFormatters.timeFormatter.string(from: currentDate)
+        
+        // Extract hours and minutes from the formatted time string using tuple pattern matching
+        let components = timeStr.split(separator: ":")
+        let (hours, minutes) = (String(components[0]), String(components[1]))
+        
+        let officialSiteUrl = URL(string: "https://www.rail.co.il/?" +
+                                 "page=routePlanSearchResults" +
+                                 "&fromStation=\(preferences.fromStation)" +
+                                 "&toStation=\(preferences.toStation)" +
+                                 "&date=\(currentDateStr)" +
+                                 "&hours=\(hours)" +
+                                 "&minutes=\(minutes)" +
+                                 "&scheduleType=1"
+                               )
+        
+        let websiteItem = NSMenuItem(title: "View on Official website", action: #selector(openRailWebsite(_:)), keyEquivalent: "")
+        websiteItem.representedObject = officialSiteUrl
+        websiteItem.target = self
+        websiteItem.image = NSImage(systemSymbolName: "safari", accessibilityDescription: "Web browser")
+        return websiteItem
+    }
     
     func windowWillClose(_ notification: Notification) {
         // If our preferences window is closing, clear the reference

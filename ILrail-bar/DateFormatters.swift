@@ -32,4 +32,37 @@ struct DateFormatters {
             return "\(travelTimeInMinutes)m"
         }
     }
+    
+    static func parseDateFormats(_ dateString: String) -> Date? {
+        // Israel Standard Time timezone
+        let israelTimeZone = TimeZone(identifier: "Asia/Jerusalem") ?? TimeZone.current
+        
+        // Try with ISO8601 formatter first
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime]
+        if let date = isoFormatter.date(from: dateString) {
+            return date
+        }
+        
+        // Create a reusable date formatter
+        let dateFormatter = DateFormatter()
+        dateFormatter.timeZone = israelTimeZone
+        
+        // Array of potential date formats
+        let formats = [
+            "yyyy-MM-dd'T'HH:mm:ss",
+            "yyyy-MM-dd'T'HH:mm:ss.SSS",
+            "yyyy-MM-dd HH:mm:ss"
+        ]
+        
+        // Try each format
+        for format in formats {
+            dateFormatter.dateFormat = format
+            if let date = dateFormatter.date(from: dateString) {
+                return date
+            }
+        }
+        
+        return nil
+    }
 }

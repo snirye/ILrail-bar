@@ -72,28 +72,14 @@ struct Station: Identifiable, Hashable {
         }
     }
     
-    static func findStation(byId id: String) -> Station? {
-        return allStations.first { $0.id == id }
-    }
-    
-    // Station data fetcher
     static func fetchStations(completion: @escaping ([Station]?) -> Void) {
         // First check if we have cached stations in UserDefaults
         if let cachedData = UserDefaults.standard.data(forKey: "cachedStationsData") {
             do {
-                struct RemoteStation: Codable {
-                    let id: String
-                    let hebrew: String
-                    let english: String?
-                    let russian: String?
-                    let arabic: String?
-                    let image: String?
-                }
-                
-                let remoteStations = try JSONDecoder().decode([RemoteStation].self, from: cachedData)
-                let stations = remoteStations.map { 
-                    Station(id: $0.id, name: $0.english ?? $0.hebrew) 
-                }.sorted { $0.name < $1.name }
+                let response = try JSONDecoder().decode(StationResponse.self, from: cachedData)
+                let stations = response.result.map { 
+                    Station(id: String($0.stationId), name: $0.stationName) 
+                }.sorted { $0.name < $1.name } // Sort by name
                 
                 if !stations.isEmpty {
                     logDebug("Using \(stations.count) stations from cache")
@@ -103,6 +89,8 @@ struct Station: Identifiable, Hashable {
                     completion(stations)
                     
                     // Continue fetch for the latest data in the background
+                    fetchLatestStationsData(completion)
+                    return
                 }
             } catch {
                 logError("Error decoding cached stations: \(error.localizedDescription)")
@@ -110,87 +98,43 @@ struct Station: Identifiable, Hashable {
             }
         }
         
-        // Fetch from primary source
-        let primaryUrl = URL(string: "https://raw.githubusercontent.com/better-rail/app/main/ios/BetterRailWatch/stationsData.json")!
-        
-        fetchFromUrl(primaryUrl) { stations in
-            if let stations = stations, !stations.isEmpty {
-                completion(stations)
-                return
-            }
-            
-            // If primary source fails, use default stations
-            logWarning("Using default stations as primary source failed")
-            setStations(defaultStations)
-            NotificationCenter.default.post(name: .stationsLoaded, object: nil)
-            completion(defaultStations)
-        }
+        // If cache handling didn't return early, fetch fresh data
+        fetchLatestStationsData(completion)
     }
     
-    private static func fetchFromUrl(_ url: URL, completion: @escaping ([Station]?) -> Void) {
-        var request = URLRequest(url: url)
-        request.addValue("ILrail-bar/1.0 macOS", forHTTPHeaderField: "User-Agent")
-        
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            guard let data = data, error == nil else {
-                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
-                logError("Error fetching stations from \(url.absoluteString): \(error?.localizedDescription ?? "HTTP \(statusCode)")")
-                completion(nil)
-                return
-            }
-                       
-            do {
-                struct RemoteStation: Codable {
-                    let id: String
-                    let hebrew: String
-                    let english: String?
-                    let russian: String?
-                    let arabic: String?
-                    let image: String?
-                }
-                
-                // First try to decode as an array
-                let remoteStations = try JSONDecoder().decode([RemoteStation].self, from: data)
-                let stations = remoteStations.map { Station(id: $0.id, name: $0.english ?? $0.hebrew) }
-                    .sorted { $0.name < $1.name } // Sort by name
+    private static func fetchLatestStationsData(_ completion: @escaping ([Station]?) -> Void) {
+        NetworkManager.shared.fetchStations { result in
+            switch result {
+            case .success(let remoteStations):
+                let stations = remoteStations.map { 
+                    Station(id: String($0.stationId), name: $0.stationName) 
+                }.sorted { $0.name < $1.name } // Sort by name
                 
                 // Verify we got stations
-                if stations.isEmpty {
-                    logWarning("Warning: Received empty stations list from \(url.absoluteString)")
-                    completion(nil)
-                } else {
-                    logDebug("Successfully loaded \(stations.count) stations from \(url.absoluteString)")
-                    
-                    // Cache the data for future use
-                    UserDefaults.standard.set(data, forKey: "cachedStationsData")
+                if !stations.isEmpty {
+                    logDebug("Successfully loaded \(stations.count) stations")
                     
                     // Update the shared list and notify observers
                     setStations(stations)
                     NotificationCenter.default.post(name: .stationsLoaded, object: nil)
                     
                     completion(stations)
-                }
-            } catch {
-                logError("Error decoding stations from \(url.absoluteString): \(error.localizedDescription)")
-                
-                // Try to decode the structure of the JSON to understand the format
-                do {
-                    if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
-                        logDebug("JSON is a dictionary with keys: \(json.keys)")
-                        // Handle dictionary format if needed
-                    } else if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [[String: Any]] {
-                        logDebug("JSON is an array of dictionaries with \(json.count) items")
-                        // Handle array format
-                    } else {
-                        logDebug("JSON is in an unknown format")
-                    }
-                } catch {
-                    logError("Failed to parse JSON: \(error.localizedDescription)")
+                } else {
+                    logWarning("Warning: Received empty stations list")
+                    setStations(defaultStations)
+                    NotificationCenter.default.post(name: .stationsLoaded, object: nil)
+                    completion(defaultStations)
                 }
                 
-                completion(nil)
+            case .failure(let error):
+                logError("Error fetching stations: \(error)")
+                // Use default stations if fetching fails
+                logWarning("Using default stations as fetching failed")
+                setStations(defaultStations)
+                NotificationCenter.default.post(name: .stationsLoaded, object: nil)
+                completion(defaultStations)
             }
-        }.resume()
+        }
     }
 }
 
