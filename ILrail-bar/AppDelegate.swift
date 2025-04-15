@@ -11,7 +11,27 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
     
     // Constants
     private let appRefreshInterval: TimeInterval = 300 // 5 minutes
-    
+    private let redTimeUntilDeparture: TimeInterval = 15 * 60 // 15 minutes in seconds
+    private let blueTimeUntilDeparture: TimeInterval = 30 * 60 // 30 minutes in seconds
+    private let noTrainFoundMessage = "No trains found for route" 
+
+        
+    @objc func copyTrainInfoToClipboard(_ sender: NSMenuItem) {
+        var textToCopy = ""
+        
+        if let attributedTitle = sender.attributedTitle {
+            textToCopy = attributedTitle.string
+        } else if !sender.title.isEmpty {
+            textToCopy = sender.title
+        }
+        
+        // Copy to clipboard if text is not empty
+        if !textToCopy.isEmpty {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(textToCopy, forType: .string)
+        }
+    }
+        
     private func createAndShowWindow(
         size: NSSize,
         title: String,
@@ -228,7 +248,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
     @objc private func fetchTrainSchedule() {
         if let button = statusItem.button {
             button.attributedTitle = NSAttributedString(
-                string: " Refresh...",
+                string: " Loading...",
                 attributes: [
                     NSAttributedString.Key.foregroundColor: NSColor.secondaryLabelColor,
                     NSAttributedString.Key.font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
@@ -246,7 +266,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
                         // Pass all train schedules to the update method
                         self.updateMenuBarWithTrains(trainSchedules)
                     } else {
-                        self.updateMenuBarWithError("No trains found")
+                        self.updateMenuBarWithError(self.noTrainFoundMessage)
                     }
                 case .failure(let error):
                     self.updateMenuBarWithError(error.localizedDescription)
@@ -275,12 +295,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         let timeUntilDeparture = firstTrain.departureTime.timeIntervalSinceNow / 60 // in minutes
         
         // Display the next train
-        let _routeDestination = "\(firstTrain.fromStationName) -> \(firstTrain.toStationName)"
         let _travelTime = DateFormatters.formatTravelTime(from: firstTrain.departureTime, to: firstTrain.arrivalTime)
         let _departureTime = DateFormatters.timeFormatter.string(from: firstTrain.departureTime)
         let _arrivalTime = DateFormatters.timeFormatter.string(from: firstTrain.arrivalTime)
-        
-        let firstTrainTitle = "Next: \(_departureTime)\t→\t\(_arrivalTime) (\(firstTrain.trainChanges))"
+
+        let firstTrainTitle = "\(_departureTime)\t→\t\(_arrivalTime) (\(firstTrain.trainChanges))"
         
         // Create an attributed string for the first train info
         let firstTrainAttrString = NSMutableAttributedString(string: firstTrainTitle)
@@ -296,10 +315,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         
         let firstTrainInfoItem = NSMenuItem(
             title: "",
-            action: nil, 
+            action: #selector(copyTrainInfoToClipboard(_:)), 
             keyEquivalent: ""
         )
         firstTrainInfoItem.attributedTitle = firstTrainAttrString
+        firstTrainInfoItem.target = self
+        trainItems.append(NSMenuItem(title: "Next:", action: nil, keyEquivalent: ""))
         trainItems.append(firstTrainInfoItem)
         
         // Add up to the configured number of additional trains
@@ -333,10 +354,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
                 
                 let trainInfoItem = NSMenuItem(
                     title: "",
-                    action: nil, 
+                    action: #selector(copyTrainInfoToClipboard(_:)), 
                     keyEquivalent: ""
                 )
                 trainInfoItem.attributedTitle = trainAttrString
+                trainInfoItem.target = self
                 trainItems.append(trainInfoItem)
             }
         }
@@ -351,20 +373,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         if let button = statusItem.button {
             let departureTimeString = DateFormatters.timeFormatter.string(from: firstTrain.departureTime)
             
-            if timeUntilDeparture < 15 {
-                // Less than 15 minutes - use red
+            if timeUntilDeparture < redTimeUntilDeparture {
                 button.attributedTitle = NSAttributedString(
                     string: " " + departureTimeString,
                     attributes: [NSAttributedString.Key.foregroundColor: NSColor.systemRed]
                 )
-            } else if timeUntilDeparture < 30 {
-                // Less than 30 minutes - use blue
+            } else if timeUntilDeparture < blueTimeUntilDeparture {
                 button.attributedTitle = NSAttributedString(
                     string: " " + departureTimeString,
                     attributes: [NSAttributedString.Key.foregroundColor: NSColor.systemBlue]
                 )
             } else {
-                // More than 30 minutes - use default system color
                 button.attributedTitle = NSAttributedString(
                     string: " " + departureTimeString,
                     attributes: [NSAttributedString.Key.foregroundColor: NSColor.labelColor]
@@ -378,7 +397,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         var errorItems: [NSMenuItem] = []
         
         // Add error information
-        let errorItem = NSMenuItem(title: "Error: " + message, action: nil, keyEquivalent: "")
+        let errorItem = NSMenuItem(title: message, action: nil, keyEquivalent: "")
         errorItems.append(errorItem)
         
         // Add a separator before the website link
@@ -392,8 +411,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         
         // Update status bar with error indicator
         if let button = statusItem.button {
-            // Determine which message to show in the menubar
-            let noTrainFoundMessage = "No trains found" 
             let menubarText = message == noTrainFoundMessage ? " No results" : " Error"            
             let textColor = message == noTrainFoundMessage ? NSColor.labelColor : NSColor.systemRed
             

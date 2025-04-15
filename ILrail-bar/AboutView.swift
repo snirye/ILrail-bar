@@ -19,6 +19,13 @@ struct AboutView: View {
             ) {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack(spacing: 5) {
+                        Text("Click - copies row to clipboard")
+                    }
+                    
+                    Divider()
+                        .padding(.vertical, 4)
+
+                    HStack(spacing: 5) {
                         Text("Red")
                             .foregroundColor(.red)
                             .fontWeight(.medium)
@@ -61,6 +68,15 @@ struct AboutView: View {
                             .fontWeight(.medium)
                         Text("- Travel time")
                     }
+
+                    Divider()
+                        .padding(.vertical, 4)
+
+                    HStack(spacing: 5) {
+                        Text("(#)")
+                            .fontWeight(.medium)
+                        Text("- Train number")
+                    }
                 }
                 .padding(8)
             }
@@ -92,6 +108,6 @@ struct AboutView: View {
             Spacer()
         }
         .padding()
-        .frame(width: 350, height: 400)
+        .frame(width: 350, height: 500)
     }
 }
