@@ -1,5 +1,20 @@
 import Foundation
 
+// API response models for stations
+struct StationResponse: Codable {
+    let creationDate: String
+    let version: String
+    let successStatus: Int
+    let statusCode: Int
+    let errorMessages: String?
+    let result: [RemoteStation]
+}
+
+struct RemoteStation: Codable {
+    let stationId: Int
+    let stationName: String
+}
+
 struct APIResponse: Decodable {
     let result: TrainResult
 }
