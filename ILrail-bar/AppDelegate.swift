@@ -10,7 +10,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
     private var aboutWindow: NSWindow?
     
     // Constants
-    private let appRefreshInterval: TimeInterval = 5 // 5 minutes
+    private let appRefreshInterval: TimeInterval = 300 // 5 minutes
     private let noTrainFoundMessage = "No trains found for route" 
     private let aboutAppVersion = "ILrail-bar v0.1" 
 
@@ -131,7 +131,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         fetchTrainSchedule()
         
         // Set up a timer to refresh the train schedule every 5 minutes
-        trainScheduleTimer = Timer.scheduledTimer(timeInterval: appRefreshInterval, target: self, selector: #selector(fetchTrainSchedule), userInfo: nil, repeats: true)
+        trainScheduleTimer = Timer.scheduledTimer(
+            timeInterval: appRefreshInterval,
+            target: self,
+            selector: #selector(timerRefresh),
+            userInfo: nil,
+            repeats: true
+        )
         
         // Listen for preferences changes
         NotificationCenter.default.addObserver(
@@ -140,6 +146,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
             name: .preferencesChanged,
             object: nil
         )
+    }
+    
+    @objc private func timerRefresh() {
+        fetchTrainSchedule(showLoading: false)
     }
     
     private func fetchStationData() {
@@ -193,7 +203,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         menu.addItem(prefsItem)
         
         // Add refresh item with icon
-        let refreshItem = NSMenuItem(title: "Refresh", action: #selector(fetchTrainSchedule), keyEquivalent: "r")
+        let refreshItem = NSMenuItem(title: "Refresh", action: #selector(manualRefresh), keyEquivalent: "r")
         refreshItem.target = self
         refreshItem.image = NSImage(systemSymbolName: "arrow.clockwise", accessibilityDescription: "Refresh")
         menu.addItem(refreshItem)
@@ -245,7 +255,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
     }
     
     @objc private func fetchTrainSchedule(showLoading: Bool = true) {
-        if let button = statusItem.button {
+        if showLoading, let button = statusItem.button {
             button.attributedTitle = NSAttributedString(
                 string: " Loading...",
                 attributes: [
@@ -272,6 +282,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
                 }
             }
         }
+    }
+    
+    @objc private func manualRefresh() {
+        fetchTrainSchedule(showLoading: true)
     }
     
     // Helper functions to create small-sized attributed text and append it
