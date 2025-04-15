@@ -10,10 +10,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
     private var aboutWindow: NSWindow?
     
     // Constants
-    private let appRefreshInterval: TimeInterval = 300 // 5 minutes
-    private let redTimeUntilDeparture: TimeInterval = 15 * 60 // 15 minutes in seconds
-    private let blueTimeUntilDeparture: TimeInterval = 30 * 60 // 30 minutes in seconds
+    private let appRefreshInterval: TimeInterval = 5 // 5 minutes
     private let noTrainFoundMessage = "No trains found for route" 
+    private let aboutAppVersion = "ILrail-bar v0.1" 
 
         
     @objc func copyTrainInfoToClipboard(_ sender: NSMenuItem) {
@@ -245,7 +244,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         fetchTrainSchedule()
     }
     
-    @objc private func fetchTrainSchedule() {
+    @objc private func fetchTrainSchedule(showLoading: Bool = true) {
         if let button = statusItem.button {
             button.attributedTitle = NSAttributedString(
                 string: " Loading...",
@@ -321,7 +320,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         
         // Get the first train for the status bar display
         let firstTrain = trainSchedules[0]
-        let timeUntilDeparture = firstTrain.departureTime.timeIntervalSinceNow / 60 // in minutes
+        let timeUntilDepartureSeconds = firstTrain.departureTime.timeIntervalSinceNow // in seconds
+        let timeUntilDepartureMinutes = timeUntilDepartureSeconds / 60 // convert to minutes        
+        logDebug("Time until departure: \(timeUntilDepartureMinutes) minutes")
         
         // Display the next train
         let _travelTime = DateFormatters.formatTravelTime(from: firstTrain.departureTime, to: firstTrain.arrivalTime)
@@ -400,12 +401,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         if let button = statusItem.button {
             let departureTimeString = DateFormatters.timeFormatter.string(from: firstTrain.departureTime)
             
-            if timeUntilDeparture < redTimeUntilDeparture {
+            let preferences = PreferencesManager.shared.preferences
+            let redTimeUntilDeparture = TimeInterval(preferences.redAlertMinutes * 60) // Convert minutes to seconds
+            let blueTimeUntilDeparture = TimeInterval(preferences.blueAlertMinutes * 60) // Convert minutes to seconds
+            
+            if timeUntilDepartureSeconds <= redTimeUntilDeparture {
                 button.attributedTitle = NSAttributedString(
                     string: " " + departureTimeString,
                     attributes: [NSAttributedString.Key.foregroundColor: NSColor.systemRed]
                 )
-            } else if timeUntilDeparture < blueTimeUntilDeparture {
+            } else if timeUntilDepartureSeconds <= blueTimeUntilDeparture {
                 button.attributedTitle = NSAttributedString(
                     string: " " + departureTimeString,
                     attributes: [NSAttributedString.Key.foregroundColor: NSColor.systemBlue]
@@ -454,7 +459,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         let hostingView = NSHostingView(rootView: aboutView)
         createAndShowWindow(
             size: NSSize(width: 350, height: 350),
-            title: "About",
+            title: aboutAppVersion,
             styleMask: [.titled, .closable],
             center: true,
             view: hostingView,

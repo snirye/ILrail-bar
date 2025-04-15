@@ -6,6 +6,8 @@ struct PreferencesView: View {
     @State private var selectedToStation: String
     @State private var upcomingItemsCount: Int
     @State private var launchAtLogin: Bool
+    @State private var redAlertMinutes: Int
+    @State private var blueAlertMinutes: Int
     @State private var isPresented: Bool = true
     @State private var stations: [Station] = Station.allStations
     @State private var isLoading: Bool = false
@@ -19,6 +21,8 @@ struct PreferencesView: View {
         _selectedToStation = State(initialValue: preferences.toStation)
         _upcomingItemsCount = State(initialValue: preferences.upcomingItemsCount)
         _launchAtLogin = State(initialValue: preferences.launchAtLogin)
+        _redAlertMinutes = State(initialValue: preferences.redAlertMinutes)
+        _blueAlertMinutes = State(initialValue: preferences.blueAlertMinutes)
         self.window = window
     }
     
@@ -34,17 +38,16 @@ struct PreferencesView: View {
                 VStack(spacing: 20) {
                     HStack(alignment: .center) {
                         Text("Launch at Login")
-                            .frame(width: 105, alignment: .leading)
+                            .frame(width: 160, alignment: .leading)
                         
                         Toggle("", isOn: $launchAtLogin)
                             .labelsHidden()
-                            .padding(.leading, 4)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     
                     HStack(alignment: .center) {
                         Text("From Station")
-                            .frame(width: 100, alignment: .leading)
+                            .frame(width: 150, alignment: .leading)
                         
                         Picker("", selection: $selectedFromStation) {
                             ForEach(stations) { station in
@@ -57,7 +60,7 @@ struct PreferencesView: View {
                     
                     HStack(alignment: .center) {
                         Text("To Station")
-                            .frame(width: 100, alignment: .leading)
+                            .frame(width: 150, alignment: .leading)
                         
                         Picker("", selection: $selectedToStation) {
                             ForEach(stations) { station in
@@ -70,14 +73,57 @@ struct PreferencesView: View {
                     
                     HStack(alignment: .center) {
                         Text("Upcoming Items")
-                            .frame(width: 100, alignment: .leading)
+                            .frame(width: 150, alignment: .leading)
                         
-                        // Replace the regular Stepper with a custom layout that aligns the number with the stepper buttons
                         HStack(spacing: 5) {
                             Text("\(upcomingItemsCount)")
                                 .frame(minWidth: 20, alignment: .trailing)
                             Stepper("", value: $upcomingItemsCount, in: 1...10)
                                 .labelsHidden()
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    
+                    HStack(alignment: .center) {
+                        (Text("Highlight ")
+                            .foregroundColor(.primary)
+                            + Text("RED")
+                                .foregroundColor(.red)
+                                .bold()
+                            + Text(" when"))
+                            .frame(width: 160, alignment: .leading)
+                        
+                        HStack(spacing: 5) {
+                            Text("≤")
+                                .foregroundColor(.secondary)
+                            Text("\(redAlertMinutes)")
+                                .frame(minWidth: 20, alignment: .trailing)
+                            Stepper("", value: $redAlertMinutes, in: 1...60)
+                                .labelsHidden()
+                            Text("min")
+                                .foregroundColor(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    
+                    HStack(alignment: .center) {
+                        (Text("Highlight ")
+                            .foregroundColor(.primary)
+                            + Text("BLUE")
+                                .foregroundColor(.blue)
+                                .bold()
+                            + Text(" when"))
+                            .frame(width: 160, alignment: .leading)
+                        
+                        HStack(spacing: 5) {
+                            Text("≤")
+                                .foregroundColor(.secondary)
+                            Text("\(blueAlertMinutes)")
+                                .frame(minWidth: 20, alignment: .trailing)
+                            Stepper("", value: $blueAlertMinutes, in: 1...120)
+                                .labelsHidden()
+                            Text("min")
+                                .foregroundColor(.secondary)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -101,7 +147,9 @@ struct PreferencesView: View {
                         fromStation: selectedFromStation,
                         toStation: selectedToStation,
                         upcomingItemsCount: upcomingItemsCount,
-                        launchAtLogin: launchAtLogin
+                        launchAtLogin: launchAtLogin,
+                        redAlertMinutes: redAlertMinutes,
+                        blueAlertMinutes: blueAlertMinutes
                     )
                     
                     // Configure launch at login
@@ -119,7 +167,7 @@ struct PreferencesView: View {
             .frame(maxWidth: .infinity)  // This ensures the HStack takes the full width
             .padding(.bottom, 20)
         }
-        .frame(width: 400, height: 250) // Adjusted height since we removed the title
+        .frame(width: 400, height: 300) // Adjusted height since we removed the title
         .onAppear {
             loadStations()
         }

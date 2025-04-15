@@ -5,12 +5,16 @@ struct StationPreferences: Codable {
     var toStation: String
     var upcomingItemsCount: Int
     var launchAtLogin: Bool
+    var redAlertMinutes: Int // Time in minutes for red alert (urgent)
+    var blueAlertMinutes: Int // Time in minutes for blue alert (approaching)
     
     static let defaultPreferences = StationPreferences(
         fromStation: "3700",
         toStation: "2300",
         upcomingItemsCount: 3,
-        launchAtLogin: false
+        launchAtLogin: false,
+        redAlertMinutes: 15,
+        blueAlertMinutes: 30
     )
 }
 
@@ -37,8 +41,16 @@ class PreferencesManager {
         }
     }
     
-    func savePreferences(fromStation: String, toStation: String, upcomingItemsCount: Int = 3, launchAtLogin: Bool = false) {
-        preferences = StationPreferences(fromStation: fromStation, toStation: toStation, upcomingItemsCount: upcomingItemsCount, launchAtLogin: launchAtLogin)
+    func savePreferences(fromStation: String, toStation: String, upcomingItemsCount: Int = 3, 
+                         launchAtLogin: Bool = false, redAlertMinutes: Int = 15, blueAlertMinutes: Int = 30) {
+        preferences = StationPreferences(
+            fromStation: fromStation, 
+            toStation: toStation, 
+            upcomingItemsCount: upcomingItemsCount, 
+            launchAtLogin: launchAtLogin,
+            redAlertMinutes: redAlertMinutes,
+            blueAlertMinutes: blueAlertMinutes
+        )
     }
 }
 

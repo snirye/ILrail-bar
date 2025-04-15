@@ -24,29 +24,6 @@ struct AboutView: View {
                     
                     Divider()
                         .padding(.vertical, 4)
-
-                    HStack(spacing: 5) {
-                        Text("Red")
-                            .foregroundColor(.red)
-                            .fontWeight(.medium)
-                        Text("- Train departing in less than 15 minutes")
-                    }
-                    
-                    HStack(spacing: 5) {
-                        Text("Blue")
-                            .foregroundColor(.blue)
-                            .fontWeight(.medium)
-                        Text("- Train departing in less than 30 minutes")
-                    }
-                    
-                    HStack(spacing: 5) {
-                        Text("Default")
-                            .fontWeight(.medium)
-                        Text("- Train departing in 30+ minutes")
-                    }
-                    
-                    Divider()
-                        .padding(.vertical, 4)
                     
                     HStack(spacing: 5) {
                         Text("(0)")
@@ -108,6 +85,6 @@ struct AboutView: View {
             Spacer()
         }
         .padding()
-        .frame(width: 350, height: 500)
+        .frame(width: 350, height: 400)
     }
 }
