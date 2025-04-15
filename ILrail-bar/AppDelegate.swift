@@ -286,9 +286,38 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         attributedString.append(createSmallText(smallText))
     }
 
+    private func setupCommonMenuItems() -> (stationItem: NSMenuItem, items: [NSMenuItem]) {
+        // Get the current route information from preferences
+        let preferences = PreferencesManager.shared.preferences
+        let stations = Station.allStations
+        
+        // Find station names from the Station class based on preferences
+        let fromStation = stations.first(where: { $0.id == preferences.fromStation })
+        let toStation = stations.first(where: { $0.id == preferences.toStation })
+        
+        // Use the found station names, or fall back to the IDs if not found
+        let fromStationName = fromStation?.name ?? preferences.fromStation
+        let toStationName = toStation?.name ?? preferences.toStation
+        
+        // Add station names at the top
+        let stationsItem = NSMenuItem(title: "\(fromStationName)\t→\t\(toStationName)", action: nil, keyEquivalent: "")
+        
+        // Create common items array with the separator and website link
+        var commonItems: [NSMenuItem] = []
+        commonItems.append(NSMenuItem.separator())
+        commonItems.append(createWebsiteMenuItem())
+        
+        return (stationsItem, commonItems)
+    }
+    
     private func updateMenuBarWithTrains(_ trainSchedules: [TrainSchedule]) {
         // Create train menu items
         var trainItems: [NSMenuItem] = []
+        
+        // Get common menu items
+        let commonMenuSetup = setupCommonMenuItems()
+        trainItems.append(commonMenuSetup.stationItem)
+        trainItems.append(NSMenuItem.separator())
         
         // Get the first train for the status bar display
         let firstTrain = trainSchedules[0]
@@ -363,9 +392,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
             }
         }
         
-        // Always add a separator and the website link
-        trainItems.append(NSMenuItem.separator())
-        trainItems.append(createWebsiteMenuItem())
+        trainItems.append(contentsOf: commonMenuSetup.items)
         
         // Use the helper method to rebuild the menu
         rebuildMenu(withTrainsOrError: true, trainItems: trainItems)
@@ -396,15 +423,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         // Create error menu items
         var errorItems: [NSMenuItem] = []
         
+        // Get common menu items
+        let commonMenuSetup = setupCommonMenuItems()
+        errorItems.append(commonMenuSetup.stationItem)
+        errorItems.append(NSMenuItem.separator())
+        
         // Add error information
         let errorItem = NSMenuItem(title: message, action: nil, keyEquivalent: "")
         errorItems.append(errorItem)
         
-        // Add a separator before the website link
-        errorItems.append(NSMenuItem.separator())
-        
-        // Add link to the official website
-        errorItems.append(createWebsiteMenuItem())
+        errorItems.append(contentsOf: commonMenuSetup.items)
         
         // Use the helper method to rebuild the menu
         rebuildMenu(withTrainsOrError: true, errorItems: errorItems)
@@ -420,7 +448,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
             )
         }
     }
-    
+        
     @objc func showAbout(_ sender: Any?) {      
         let aboutView = AboutView(window: aboutWindow ?? NSWindow())
         let hostingView = NSHostingView(rootView: aboutView)
