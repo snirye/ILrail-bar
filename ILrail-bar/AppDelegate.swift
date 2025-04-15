@@ -265,11 +265,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         let timeUntilDeparture = firstTrain.departureTime.timeIntervalSinceNow / 60 // in minutes
         
         // Display the next train
+        let _routeDestination = "\(firstTrain.fromStationName) -> \(firstTrain.toStationName)"
         let _travelTime = DateFormatters.formatTravelTime(from: firstTrain.departureTime, to: firstTrain.arrivalTime)
         let _departureTime = DateFormatters.timeFormatter.string(from: firstTrain.departureTime)
         let _arrivalTime = DateFormatters.timeFormatter.string(from: firstTrain.arrivalTime)
-
-        let firstTrainTitle = "Next: \(_departureTime) → \(_arrivalTime) (\(firstTrain.trainChanges))"
+        
+        let firstTrainTitle = "Next: \(_departureTime)\t→\t\(_arrivalTime) (\(firstTrain.trainChanges))"
         
         // Create an attributed string for the first train info
         let firstTrainAttrString = NSMutableAttributedString(string: firstTrainTitle)
@@ -289,6 +290,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
             keyEquivalent: ""
         )
         firstTrainInfoItem.attributedTitle = firstTrainAttrString
+        // trainItems.append(NSMenuItem(title: _routeDestination, action: nil, keyEquivalent: ""))
+        // trainItems.append(NSMenuItem.separator())
         trainItems.append(firstTrainInfoItem)
         
         // Add up to the configured number of additional trains
@@ -308,7 +311,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
                 let _departureTime = DateFormatters.timeFormatter.string(from: train.departureTime)
                 let _arrivalTime = DateFormatters.timeFormatter.string(from: train.arrivalTime)
 
-                let trainBaseTitle = "\(_departureTime) → \(_arrivalTime) (\(train.trainChanges))"
+                let trainBaseTitle = "\(_departureTime)\t→\t\(_arrivalTime) (\(train.trainChanges))"
                 let trainAttrString = NSMutableAttributedString(string: trainBaseTitle)
                 
                 appendSmallText(" [\(_travelTime)]", to: trainAttrString)
