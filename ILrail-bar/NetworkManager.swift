@@ -4,8 +4,10 @@ class NetworkManager {
     static let shared = NetworkManager()
     
     private let apiKey = "4b0d355121fe4e0bb3d86e902efe9f20"
-    private let timetableBaseURL = "https://israelrail.azurefd.net/rjpa-prod/api/v1/timetable/searchTrainLuzForDateTime"
-    private let stationsBaseURL = "https://israelrail.azurefd.net/common/api/v1/stations"
+    private let apiBaseURL = "https://israelrail.azurefd.net"    
+    private var timetableBaseURL: String { return "\(apiBaseURL)/rjpa-prod/api/v1/timetable/searchTrainLuzForDateTime" }
+    private var stationsBaseURL: String { return "\(apiBaseURL)/common/api/v1/stations" }
+    private let madeUpUserAgent = "ILrail-bar/1.0 macOS"
     
     private let languageId = "Hebrew"
     private let scheduleType = "1"
@@ -36,7 +38,7 @@ class NetworkManager {
         }
         
         var request = URLRequest(url: url)
-        request.addValue("ILrail-bar/1.0 macOS", forHTTPHeaderField: "User-Agent")
+        request.addValue(madeUpUserAgent, forHTTPHeaderField: "User-Agent")
         request.addValue(apiKey, forHTTPHeaderField: "ocp-apim-subscription-key")
         
         URLSession.shared.dataTask(with: request) { data, response, error in
@@ -98,7 +100,6 @@ class NetworkManager {
         // Get station preferences
         let preferences = PreferencesManager.shared.preferences
         
-        // Log preferences to check station IDs
         logInfo("Fetching trains from \(preferences.fromStation) to \(preferences.toStation)")
         
         // Construct URL with query parameters
@@ -119,6 +120,7 @@ class NetworkManager {
         }
         
         var request = URLRequest(url: url)
+        request.addValue(madeUpUserAgent, forHTTPHeaderField: "User-Agent")
         request.addValue(apiKey, forHTTPHeaderField: "ocp-apim-subscription-key")
         
         URLSession.shared.dataTask(with: request) { data, response, error in            
@@ -160,8 +162,7 @@ class NetworkManager {
                 let response = try decoder.decode(APIResponse.self, from: data)
 
                 let now = Date()
-                logDebug("Current date: \(now)")
-                
+
                 // Extract all trains from all travels
                 var trainSchedules: [TrainSchedule] = []
                 
@@ -194,7 +195,6 @@ class NetworkManager {
                         )
                         trainSchedules.append(schedule)
                         
-                        // Log the travel information for debugging
                         logDebug("Adding journey with \(trainChanges) switches: Train #\(trainNumberString) from \(firstTrainData.fromStationName ?? "unknown") to \(travel.trains.last?.toStationName ?? "unknown")")
                     }
                 }
@@ -209,8 +209,7 @@ class NetworkManager {
                 // Sort the filtered trains by departure time
                 let sortedTrains = upcomingTrains.sorted { $0.departureTime < $1.departureTime }
                 
-                // Debug info for the first few trains after sorting
-                logInfo("Sorted upcoming trains:")
+                logDebug("Sorted upcoming trains:")
                 for (_, train) in sortedTrains.enumerated() {
                     let formatter = DateFormatter()
                     formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
