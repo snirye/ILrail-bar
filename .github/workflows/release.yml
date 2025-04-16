@@ -1,0 +1,47 @@
+name: "Release"
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    runs-on: macos-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v4
+
+      - name: "Tagging"
+        id: tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          LATEST_TAG=$(gh api https://api.github.com/repos/drehelis/ILrail-bar/releases/latest | jq -r '.tag_name // empty')
+          VERSION=${LATEST_TAG#v}
+
+          [[ -z "$VERSION" ]] && VERSION=$(utils/increment_version.sh -M 0.0.0)
+
+          NEW_TAG="v$(utils/increment_version.sh -p $VERSION)"
+
+          echo "Latest tag: $LATEST_TAG"
+          echo "New tag: $NEW_TAG"
+
+          echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
+
+      - name: "Build & Package"
+        run: |
+          # https://github.com/actions/runner-images/blob/main/images/macos/macos-14-Readme.md#xcode
+          sudo xcode-select -switch /Applications/Xcode_16.2.app
+
+          ./utils/package_dmg.sh
+
+      - name: "Release"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create $NEW_TAG -t $NEW_TAG ./ILrail-bar.dmg
