@@ -15,6 +15,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         static let menuBarLoadingText = " Loading..."
         static let menuBarNoResultsText = " No results"
         static let noTrainFoundMessage = "No trains found for route"
+        static let toolTipStationsText = "Click to reverse direction"
+        static let toolTipCopyToClipboard = "Click to copy train info to clipboard"
         
         // Menu section titles
         static let nextTrainTitle = "Next:"
@@ -277,7 +279,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
     @objc private func fetchTrainSchedule(showLoading: Bool = true) {
         if showLoading, let button = statusItem.button {
             button.attributedTitle = NSAttributedString(
-                string: " Loading...",
+                string: Constants.menuBarLoadingText,
                 attributes: [
                     NSAttributedString.Key.foregroundColor: NSColor.secondaryLabelColor,
                     NSAttributedString.Key.font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
@@ -291,7 +293,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
             DispatchQueue.main.async {
                 switch result {
                 case .success(let trainSchedules):
-                    if !trainSchedules.isEmpty {
+                    if (!trainSchedules.isEmpty) {
                         // Pass all train schedules to the update method
                         self.updateMenuBarWithTrains(trainSchedules)
                     } else {
@@ -333,8 +335,17 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         let fromStationName = fromStation?.name ?? preferences.fromStation
         let toStationName = toStation?.name ?? preferences.toStation
         
-        // Add station names at the top
-        let stationsItem = NSMenuItem(title: "\(fromStationName)\t→\t\(toStationName)", action: nil, keyEquivalent: "")
+        let stationTitle = "\(fromStationName)  \t→\t \(toStationName)"
+        
+        let customView = StationMenuItemView(
+            title: stationTitle,
+            target: self,
+            action: #selector(reverseTrainDirection(_:))
+        )
+        customView.toolTip = Constants.toolTipStationsText
+        
+        let stationsItem = NSMenuItem()
+        stationsItem.view = customView
         
         // Create common items array with the separator and website link
         var commonItems: [NSMenuItem] = []
@@ -385,7 +396,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         )
         firstTrainInfoItem.attributedTitle = firstTrainAttrString
         firstTrainInfoItem.target = self
-        trainItems.append(NSMenuItem(title: Constants.nextTrainTitle, action: nil, keyEquivalent: ""))
+        firstTrainInfoItem.toolTip = Constants.toolTipCopyToClipboard
+
+        let nextTrainHeader = NSMenuItem(title: Constants.nextTrainTitle, action: nil, keyEquivalent: "")
+        nextTrainHeader.isEnabled = false
+        trainItems.append(nextTrainHeader)
         trainItems.append(firstTrainInfoItem)
         
         // Add up to the configured number of additional trains
@@ -395,7 +410,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         
         if trainSchedules.count > 1 {
             trainItems.append(NSMenuItem.separator())
-            trainItems.append(NSMenuItem(title: Constants.upcomingTrainsTitle, action: nil, keyEquivalent: ""))
+            
+            let upcomingHeader = NSMenuItem(title: Constants.upcomingTrainsTitle, action: nil, keyEquivalent: "")
+            upcomingHeader.isEnabled = false
+            trainItems.append(upcomingHeader)
             
             for i in 1..<maxTrainsToShow {
                 let train = trainSchedules[i]
@@ -424,6 +442,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
                 )
                 trainInfoItem.attributedTitle = trainAttrString
                 trainInfoItem.target = self
+                trainInfoItem.toolTip = Constants.toolTipCopyToClipboard
                 trainItems.append(trainInfoItem)
             }
         }
@@ -470,6 +489,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
         
         // Add error information
         let errorItem = NSMenuItem(title: message, action: nil, keyEquivalent: "")
+        errorItem.isEnabled = false // Explicitly disable the error message item
         errorItems.append(errorItem)
         
         errorItems.append(contentsOf: commonMenuSetup.items)
@@ -560,5 +580,105 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMenuItem
             return true
         }
         return true
+    }
+
+    @objc private func reverseTrainDirection(_ sender: NSMenuItem) {
+        let preferences = PreferencesManager.shared.preferences
+        
+        let oldFromStation = preferences.fromStation
+        let oldToStation = preferences.toStation
+        
+        logInfo("Reversing train direction: \(oldFromStation) ↔ \(oldToStation)")
+        
+        PreferencesManager.shared.savePreferences(
+            fromStation: oldToStation,
+            toStation: oldFromStation,
+            upcomingItemsCount: preferences.upcomingItemsCount,
+            launchAtLogin: preferences.launchAtLogin,
+            redAlertMinutes: preferences.redAlertMinutes,
+            blueAlertMinutes: preferences.blueAlertMinutes,
+            refreshInterval: preferences.refreshInterval
+        )
+        
+        // Trigger a refresh to update the train schedule
+        NotificationCenter.default.post(name: .reloadPreferencesChanged, object: nil)
+    }
+}
+
+class StationMenuItemView: NSView {
+    private let title: String
+    private weak var target: AnyObject?
+    private let action: Selector
+    private var trackingArea: NSTrackingArea?
+    
+    private static let standardHeight: CGFloat = 22
+    private static let horizontalPadding: CGFloat = 14
+    private static let standardMenuFont = NSFont.menuFont(ofSize: 0)
+    private static let cornerRadius: CGFloat = 4
+    
+    init(title: String, target: AnyObject?, action: Selector) {
+        self.title = title
+        self.target = target
+        self.action = action
+        
+        let textWidth = NSAttributedString(
+            string: title,
+            attributes: [.font: Self.standardMenuFont]
+        ).size().width
+        
+        let calculatedWidth = textWidth + (Self.horizontalPadding * 2)
+        
+        super.init(frame: NSRect(x: 0, y: 0, width: calculatedWidth, height: Self.standardHeight))
+        setupView()
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    private func setupView() {
+        setAccessibilityRole(.button)
+        setAccessibilityLabel(title)
+    }
+    
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        
+        let attributes: [NSAttributedString.Key: Any] = [
+            .foregroundColor: NSColor.labelColor,
+            .font: Self.standardMenuFont
+        ]
+        
+        let attributedString = NSAttributedString(string: title, attributes: attributes)
+        let textRect = NSRect(
+            x: Self.horizontalPadding,
+            y: 0,
+            width: bounds.width - (2 * Self.horizontalPadding),
+            height: bounds.height
+        )
+        
+        let textSize = attributedString.size()
+        let yPosition = (bounds.height - textSize.height) / 2
+        
+        attributedString.draw(in: NSRect(
+            x: textRect.origin.x,
+            y: yPosition,
+            width: textRect.width,
+            height: textSize.height
+        ))
+    }
+    
+    override func mouseDown(with event: NSEvent) {
+        handleClick()
+    }
+    
+    override func mouseUp(with event: NSEvent) {
+        // Intentionally empty - we handle everything in mouseDown
+    }
+    
+    private func handleClick() {
+        if let target = target {
+            _ = target.perform(action, with: nil)
+        }
     }
 }
