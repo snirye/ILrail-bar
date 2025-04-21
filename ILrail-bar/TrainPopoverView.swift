@@ -55,7 +55,6 @@ struct TrainPopoverView: View {
             
             // Next train section
             if !trainSchedules.isEmpty {
-                // Remove ScrollView entirely and just use a VStack
                 VStack(alignment: .leading, spacing: 0) {
                     HStack {
                         Text("Next:")
@@ -85,14 +84,15 @@ struct TrainPopoverView: View {
                             .padding(.bottom, 5)
                             
                         // Only show configured number of trains
-                        ForEach(1..<min(trainSchedules.count, PreferencesManager.shared.preferences.upcomingItemsCount + 1)) { index in
+                        let maxItems = min(trainSchedules.count, PreferencesManager.shared.preferences.upcomingItemsCount + 1)
+                        ForEach(1..<maxItems, id: \.self) { index in
                             TrainInfoRow(
                                 train: trainSchedules[index],
                                 redAlertMinutes: redAlertMinutes,
                                 blueAlertMinutes: blueAlertMinutes
                             )
                             
-                            if index < min(trainSchedules.count, PreferencesManager.shared.preferences.upcomingItemsCount + 1) - 1 {
+                            if index < maxItems - 1 {
                                 Divider()
                                     .padding(.horizontal)
                             }
@@ -154,6 +154,7 @@ struct TrainInfoRow: View {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 5) {
                         Text(timeString(for: train.departureTime))
+                            .font(.system(.body, design: .default).monospacedDigit())
                             .fontWeight(.medium)
                             .foregroundColor(timeUntilDepartureColor())
                         
@@ -161,6 +162,7 @@ struct TrainInfoRow: View {
                             .foregroundStyle(.secondary)
                         
                         Text(timeString(for: train.arrivalTime))
+                            .font(.system(.body, design: .default).monospacedDigit())
                             .fontWeight(.medium)
                             .foregroundColor(timeUntilDepartureColor())
                         
@@ -168,7 +170,7 @@ struct TrainInfoRow: View {
                         
                         Group {
                             Text("[\(travelTimeString())]")
-                                .font(.caption)
+                                .font(.system(.caption, design: .default).monospacedDigit())
                                 .foregroundStyle(.secondary)
                             
                             if train.trainChanges > 0 && !train.allTrainNumbers.isEmpty {
@@ -266,10 +268,9 @@ struct HeaderView: View {
                 }
                 .contentShape(Rectangle())
             }
-            .buttonStyle(PlainButtonStyle())
+            .buttonStyle(AccessoryBarButtonStyle())
             .help("\(fromStationName) → \(toStationName)")
             
-            // Show cache indicator if data is from cache
             if isFromCache, let cacheAge = cacheAgeMinutes {
                 HStack(spacing: 3) {
                     Image(systemName: "clock.arrow.circlepath")
@@ -283,8 +284,7 @@ struct HeaderView: View {
                 .frame(maxWidth: .infinity, alignment: .trailing)
             }
         }
-        .padding([.horizontal, .top])
-        .padding(.bottom, 5)
+        .padding(EdgeInsets(top: 8, leading: 10, bottom: 8, trailing: 0))
     }
 }
 
