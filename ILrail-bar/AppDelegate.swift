@@ -6,11 +6,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSPopoverD
     private var popover: NSPopover!
     private var preferencesPopover: NSPopover!
     private var trainScheduleTimer: Timer?
+    private var activeScheduleTimer: Timer?
+    private var displayUpdateTimer: Timer?
     private let networkManager = NetworkManager()
     private var preferencesWindow: NSWindow?
     private var aboutWindow: NSWindow?
     private var eventMonitor: EventMonitor?
     private var preferencesEventMonitor: EventMonitor?
+    private var isMenuBarVisible: Bool = true
     
     // Current train schedules and error state
     private var currentTrainSchedules: [TrainSchedule] = []
@@ -18,9 +21,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSPopoverD
     private var isRefreshing: Bool = false
     
     private enum Constants {
-        static let aboutTitle = "ILrail-bar v%%VERSION%%"
-        static let menuBarErrorText = " Error"
-        static let menuBarNoResultsText = " No trains"
+        static let aboutTitle = "ILrail-bar %%VERSION%%"
+        static let menuBarErrorText = "Error"
+        static let menuBarNoResultsText = "No trains"
         static let noTrainFoundMessage = "No trains found for route"
     }
         
@@ -94,6 +97,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSPopoverD
             repeats: true
         )
         
+        activeScheduleTimer = Timer.scheduledTimer(
+            timeInterval: 60,
+            target: self,
+            selector: #selector(checkActiveHours),
+            userInfo: nil,
+            repeats: true
+        )
+        
+        displayUpdateTimer = Timer.scheduledTimer(
+            timeInterval: 10,
+            target: self,
+            selector: #selector(updateDisplayWithoutFetching),
+            userInfo: nil,
+            repeats: true
+        )
+        
         // Listen for preferences changes
         NotificationCenter.default.addObserver(
             self,
@@ -122,12 +141,40 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSPopoverD
     func applicationWillTerminate(_ notification: Notification) {
         eventMonitor?.stop()
         preferencesEventMonitor?.stop()
+        
+        // Invalidate all timers when the app terminates
+        trainScheduleTimer?.invalidate()
+        activeScheduleTimer?.invalidate()
+        displayUpdateTimer?.invalidate()
     }
     
     @objc private func timerRefresh() {
         let interval = PreferencesManager.shared.preferences.refreshInterval
         logInfo("Performing scheduled refresh (interval: \(interval) seconds)")
         fetchTrainSchedule(showLoading: false)
+    }
+    
+    @objc private func checkActiveHours() {
+        let isActive = isCurrentTimeActive()
+        if isActive && !isMenuBarVisible {
+            logInfo("Activating train time display")
+            isMenuBarVisible = true
+            
+            // Update with the latest train info if available
+            if !currentTrainSchedules.isEmpty {
+                updateStatusBarWithTrain(currentTrainSchedules[0])
+            } else if let errorMessage = currentErrorMessage {
+                updateStatusBarWithError(errorMessage)
+            }
+        } else if !isActive && isMenuBarVisible {
+            logInfo("Hiding train time display")
+            isMenuBarVisible = false
+            
+            // Hide time text but keep the icon
+            if let button = statusItem.button {
+                button.attributedTitle = NSAttributedString(string: "")
+            }
+        }
     }
     
     private func fetchStationData() {
@@ -158,6 +205,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSPopoverD
             button.action = #selector(togglePopover)
             button.target = self
         }
+        
+        // Check if the time text should be visible based on current time
+        isMenuBarVisible = isCurrentTimeActive()
+        
+        // Always keep the status item visible (tram icon), just hide the time text if needed
+        if !isMenuBarVisible {
+            if let button = statusItem.button {
+                button.attributedTitle = NSAttributedString(string: "")
+            }
+        }
+        
+        logInfo("Initial time text visibility: \(isMenuBarVisible ? "visible" : "hidden")")
     }
     
     @objc func togglePopover(_ sender: AnyObject?) {
@@ -312,6 +371,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSPopoverD
             userInfo: nil,
             repeats: true
         )
+        
+        // Reset display update timer to ensure consistent behavior with new preferences
+        if let existingDisplayTimer = displayUpdateTimer {
+            existingDisplayTimer.invalidate()
+        }
+        
+        displayUpdateTimer = Timer.scheduledTimer(
+            timeInterval: 10,
+            target: self,
+            selector: #selector(updateDisplayWithoutFetching),
+            userInfo: nil,
+            repeats: true
+        )
+        
+        // Check if menu bar should be visible with new preferences
+        checkActiveHours()
     }
     
     @objc private func fetchTrainSchedule(showLoading: Bool = true) {
@@ -384,8 +459,53 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSPopoverD
         }
     }
     
+    @objc private func updateDisplayWithoutFetching() {
+        // Don't do anything if we have no train schedules or if we're outside active hours
+        guard !currentTrainSchedules.isEmpty && isMenuBarVisible else {
+            return
+        }
+        
+        // Find all trains that haven't departed yet
+        let now = Date()
+        let upcomingTrains = currentTrainSchedules.filter { $0.departureTime > now }
+        
+        // Update the current train schedules array to only include upcoming trains
+        if upcomingTrains.count < currentTrainSchedules.count && !upcomingTrains.isEmpty {
+            logInfo("Updating display without fetching new data")
+            currentTrainSchedules = upcomingTrains
+        }
+        
+        if let nextTrain = upcomingTrains.first {
+            // Update the menu bar with the next upcoming train
+            updateStatusBarWithTrain(nextTrain)
+            
+            if popover.isShown {
+                updatePopoverContent()
+            }
+            
+            NotificationCenter.default.post(name: .trainDisplayUpdate, object: nil)
+            
+        } else if upcomingTrains.isEmpty && !currentTrainSchedules.isEmpty {
+            // All trains have departed, show no trains message
+            logInfo("Updating display without fetching new data")
+            currentTrainSchedules = []
+            currentErrorMessage = Constants.noTrainFoundMessage
+            updateStatusBarWithError(Constants.noTrainFoundMessage)
+            
+            if popover.isShown {
+                updatePopoverContent()
+            }
+        }
+    }
+    
     private func updateStatusBarWithTrain(_ train: TrainSchedule) {
         if let button = statusItem.button {
+            // Only show train time if within active schedule
+            if !isMenuBarVisible {
+                button.attributedTitle = NSAttributedString(string: "")
+                return
+            }
+            
             let departureTimeString = DateFormatters.timeFormatter.string(from: train.departureTime)
             let timeUntilDepartureSeconds = train.departureTime.timeIntervalSinceNow
 
@@ -418,6 +538,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSPopoverD
     
     private func updateStatusBarWithError(_ message: String) {
         if let button = statusItem.button {
+            // Only show error text if within active schedule
+            if !isMenuBarVisible {
+                button.attributedTitle = NSAttributedString(string: "")
+                return
+            }
+            
             let menubarText = message == Constants.noTrainFoundMessage ? Constants.menuBarNoResultsText : Constants.menuBarErrorText
             let textColor = message == Constants.noTrainFoundMessage ? NSColor.labelColor : NSColor.systemRed
             
@@ -509,11 +635,35 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSPopoverD
             launchAtLogin: preferences.launchAtLogin,
             redAlertMinutes: preferences.redAlertMinutes,
             blueAlertMinutes: preferences.blueAlertMinutes,
-            refreshInterval: preferences.refreshInterval
+            refreshInterval: preferences.refreshInterval,
+            activeDays: preferences.activeDays,
+            activeStartHour: preferences.activeStartHour,
+            activeEndHour: preferences.activeEndHour
         )
         
         // Trigger a refresh to update the train schedule
         NotificationCenter.default.post(name: .reloadPreferencesChanged, object: nil)
+    }
+    
+    private func isCurrentTimeActive() -> Bool {
+        let preferences = PreferencesManager.shared.preferences
+        let calendar = Calendar.current
+        let now = Date()
+        
+        // Check if today is an active day
+        let weekday = calendar.component(.weekday, from: now) // 1 = Sunday, 2 = Monday, etc.
+        let dayIndex = weekday - 1 // Convert to 0-based index (0 = Sunday)
+        
+        // Check if the current day is marked as active
+        guard preferences.activeDays.count > dayIndex && preferences.activeDays[dayIndex] else {
+            return false
+        }
+        
+        // Check if the current hour is within the active hours
+        let hour = calendar.component(.hour, from: now)
+        let isInActiveHours = hour >= preferences.activeStartHour && hour <= preferences.activeEndHour
+        
+        return isInActiveHours
     }
 }
 

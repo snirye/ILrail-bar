@@ -5,9 +5,12 @@ struct StationPreferences: Codable {
     var toStation: String
     var upcomingItemsCount: Int
     var launchAtLogin: Bool
-    var redAlertMinutes: Int // Time in minutes for red alert (urgent)
-    var blueAlertMinutes: Int // Time in minutes for blue alert (approaching)
-    var refreshInterval: Int // Time in seconds for refresh interval
+    var redAlertMinutes: Int
+    var blueAlertMinutes: Int
+    var refreshInterval: Int
+    var activeDays: [Bool]
+    var activeStartHour: Int
+    var activeEndHour: Int
     
     static let defaultPreferences = StationPreferences(
         fromStation: "3700",
@@ -16,7 +19,10 @@ struct StationPreferences: Codable {
         launchAtLogin: false,
         redAlertMinutes: 15,
         blueAlertMinutes: 30,
-        refreshInterval: 300
+        refreshInterval: 600,
+        activeDays: [true, true, true, true, true, false, false], // All days active by default
+        activeStartHour: 6, // 6 AM
+        activeEndHour: 23 // 11 PM
     )
 }
 
@@ -45,7 +51,8 @@ class PreferencesManager {
     
     func savePreferences(fromStation: String, toStation: String, upcomingItemsCount: Int = 3, 
                          launchAtLogin: Bool = false, redAlertMinutes: Int = 15, blueAlertMinutes: Int = 30,
-                         refreshInterval: Int = 300) {
+                         refreshInterval: Int = 300, activeDays: [Bool]? = nil, activeStartHour: Int = 6, activeEndHour: Int = 23) {
+        let currentPrefs = preferences
         preferences = StationPreferences(
             fromStation: fromStation, 
             toStation: toStation, 
@@ -53,7 +60,10 @@ class PreferencesManager {
             launchAtLogin: launchAtLogin,
             redAlertMinutes: redAlertMinutes,
             blueAlertMinutes: blueAlertMinutes,
-            refreshInterval: refreshInterval
+            refreshInterval: refreshInterval,
+            activeDays: activeDays ?? currentPrefs.activeDays,
+            activeStartHour: activeStartHour,
+            activeEndHour: activeEndHour
         )
     }
 }
@@ -159,4 +169,5 @@ struct Station: Identifiable, Hashable {
 extension Notification.Name {
     static let reloadPreferencesChanged = Notification.Name("com.ilrailbar.reloadPreferencesChanged")
     static let stationsLoaded = Notification.Name("com.ilrailbar.stationsLoaded")
+    static let trainDisplayUpdate = Notification.Name("com.ilrailbar.trainDisplayUpdate")
 }
