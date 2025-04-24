@@ -465,9 +465,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSPopoverD
             return
         }
         
-        // Find all trains that haven't departed yet
+        // Find all trains that haven't departed yet, considering walk time
         let now = Date()
-        let upcomingTrains = currentTrainSchedules.filter { $0.departureTime > now }
+        let walkTimeDurationSec = TimeInterval(PreferencesManager.shared.preferences.walkTimeDurationMin * 60)
+        
+        let upcomingTrains = currentTrainSchedules.filter {
+            let timeUntilDeparture = $0.departureTime.timeIntervalSince(now)
+            
+            if PreferencesManager.shared.preferences.walkTimeDurationMin > 0 {
+                return timeUntilDeparture > walkTimeDurationSec
+            } else {
+                return timeUntilDeparture > -60 // Allow trains departing within the last minute
+            }
+        }
         
         // Update the current train schedules array to only include upcoming trains
         if upcomingTrains.count < currentTrainSchedules.count && !upcomingTrains.isEmpty {
@@ -507,26 +517,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSPopoverD
             }
             
             let departureTimeString = DateFormatters.timeFormatter.string(from: train.departureTime)
-            let timeUntilDepartureSeconds = train.departureTime.timeIntervalSinceNow
-
-            let preferences = PreferencesManager.shared.preferences
-            let redTimeUntilDeparture = TimeInterval(preferences.redAlertMinutes * 60)
-            let blueTimeUntilDeparture = TimeInterval(preferences.blueAlertMinutes * 60)
             
             // Use a monospaced font to ensure consistent width
             let font = NSFont.monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
             
-            var attributes: [NSAttributedString.Key: Any] = [
-                .font: font
+            let attributes: [NSAttributedString.Key: Any] = [
+                .font: font,
+                .foregroundColor: NSColor.labelColor
             ]
-            
-            if timeUntilDepartureSeconds <= redTimeUntilDeparture {
-                attributes[.foregroundColor] = NSColor.systemRed
-            } else if timeUntilDepartureSeconds <= blueTimeUntilDeparture {
-                attributes[.foregroundColor] = NSColor.systemBlue
-            } else {
-                attributes[.foregroundColor] = NSColor.labelColor
-            }
             
             // Use a consistent width for the text
             button.attributedTitle = NSAttributedString(
@@ -633,12 +631,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSPopoverD
             toStation: oldFromStation,
             upcomingItemsCount: preferences.upcomingItemsCount,
             launchAtLogin: preferences.launchAtLogin,
-            redAlertMinutes: preferences.redAlertMinutes,
-            blueAlertMinutes: preferences.blueAlertMinutes,
             refreshInterval: preferences.refreshInterval,
             activeDays: preferences.activeDays,
             activeStartHour: preferences.activeStartHour,
-            activeEndHour: preferences.activeEndHour
+            activeEndHour: preferences.activeEndHour,
+            walkTimeDurationMin: preferences.walkTimeDurationMin
         )
         
         // Trigger a refresh to update the train schedule
