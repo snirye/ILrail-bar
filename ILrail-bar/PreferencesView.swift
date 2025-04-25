@@ -114,8 +114,10 @@ struct PreferencesView: View {
     @State private var activeStartHour: Int
     @State private var activeEndHour: Int
     @State private var walkTimeDurationMin: Int
+    @State private var maxTrainChanges: Int
     @State private var stations: [Station] = Station.allStations
     @State private var isLoading: Bool = false
+    @State private var showAdditionalFilters: Bool = false // Added state for the disclosure group
     
     // Callback functions for popover actions
     let onSave: () -> Void
@@ -132,6 +134,7 @@ struct PreferencesView: View {
         _activeStartHour = State(initialValue: preferences.activeStartHour)
         _activeEndHour = State(initialValue: preferences.activeEndHour)
         _walkTimeDurationMin = State(initialValue: preferences.walkTimeDurationMin)
+        _maxTrainChanges = State(initialValue: preferences.maxTrainChanges)
         self.onSave = onSave
         self.onCancel = onCancel
     }
@@ -183,19 +186,6 @@ struct PreferencesView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
 
-                    HStack(alignment: .center) {
-                        Text("Upcoming list items")
-                            .frame(width: 150, alignment: .leading)
-                        
-                        HStack(spacing: 5) {
-                            Text("\(upcomingItemsCount)")
-                                .frame(minWidth: 20, alignment: .trailing)
-                            Stepper("", value: $upcomingItemsCount, in: 1...10)
-                                .labelsHidden()
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    
                     HStack(alignment: .center) {
                         Text("Schedule fetch interval")
                             .frame(width: 150, alignment: .leading)
@@ -266,6 +256,51 @@ struct PreferencesView: View {
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
+                    
+                    Divider()
+                    
+                    Button(action: {
+                        showAdditionalFilters.toggle()
+                    }) {
+                        HStack {
+                            Text("Additional Filters")
+                            Spacer()
+                            Image(systemName: showAdditionalFilters ? "chevron.up" : "chevron.down")
+                        }
+                    }
+                    .buttonStyle(PlainButtonStyle())
+
+                    if showAdditionalFilters {
+                        VStack(spacing: 20) {
+                            HStack(alignment: .center) {
+                                Text("Upcoming list items")
+                                    .frame(width: 150, alignment: .leading)
+                                
+                                HStack(spacing: 5) {
+                                    Text("\(upcomingItemsCount)")
+                                        .frame(minWidth: 20, alignment: .trailing)
+                                    Stepper("", value: $upcomingItemsCount, in: 1...10)
+                                        .labelsHidden()
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+
+                            HStack(alignment: .center) {
+                                Text("Limit train change")
+                                    .frame(width: 150, alignment: .leading)
+
+                                Picker("", selection: $maxTrainChanges) {
+                                    Text("No limit").tag(-1)
+                                    Text("Direct only").tag(0)
+                                    Text("1 change").tag(1)
+                                    Text("2 changes").tag(2)
+                                    Text("3 changes").tag(3)
+                                }
+                                .pickerStyle(PopUpButtonPickerStyle())
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                        }
+                    }
                 }
                 .padding(.horizontal, 20)
             }
@@ -288,7 +323,8 @@ struct PreferencesView: View {
                         activeDays: activeDays,
                         activeStartHour: activeStartHour,
                         activeEndHour: activeEndHour,
-                        walkTimeDurationMin: walkTimeDurationMin
+                        walkTimeDurationMin: walkTimeDurationMin,
+                        maxTrainChanges: maxTrainChanges
                     )
                     
                     // Configure launch at login
