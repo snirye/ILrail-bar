@@ -23,13 +23,12 @@ struct TrainSchedule: Equatable {
     let trainNumber: String
     let departureTime: Date
     let arrivalTime: Date
-    let platform: String?
+    let platform: String
     let fromStationName: String
     let toStationName: String
     let trainChanges: Int
     let allTrainNumbers: [String]
-    let isFromCache: Bool
-    let cacheAgeMinutes: Int?
+    let allPlatforms: [String]
 }
 
 struct TrainResult: Decodable {

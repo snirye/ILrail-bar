@@ -41,9 +41,7 @@ struct TrainPopoverView: View {
             HeaderView(
                 fromStationName: fromStationName,
                 toStationName: toStationName,
-                onReverseDirection: onReverseDirection,
-                isFromCache: trainSchedules.first?.isFromCache ?? false,
-                cacheAgeMinutes: trainSchedules.first?.cacheAgeMinutes
+                onReverseDirection: onReverseDirection
             )
             
             Divider()
@@ -96,8 +94,17 @@ struct TrainPopoverView: View {
             } else {
                 VStack(spacing: 20) {
                     Spacer()
-                    Text("No trains found for this route")
+                    Text("No trains found for route")
                         .foregroundStyle(.secondary)
+                    
+                    let preferences = PreferencesManager.shared.preferences
+                    if preferences.walkTimeDurationMin > 0 || preferences.maxTrainChanges != -1 {
+                        VStack(spacing: 5) {
+                            Text("This may be due to active filters")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                     Spacer()
                 }
                 .frame(height: 100)
@@ -166,12 +173,12 @@ struct TrainInfoRow: View {
                                 .foregroundStyle(.secondary)
                                 .id("travel-\(refreshID)")
                             
-                            if train.trainChanges > 0 && !train.allTrainNumbers.isEmpty {
-                                Text("(\(train.allTrainNumbers.map { "#\($0)" }.joined(separator: ", ")))")
+                            if train.trainChanges > 0 && !train.platform.isEmpty && train.allPlatforms.count > 1 {
+                                Text("(Plat. #\(train.allPlatforms.joined(separator: ", ")))")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
-                            } else if !train.trainNumber.isEmpty {
-                                Text("(#\(train.trainNumber))")
+                            } else if !train.platform.isEmpty {
+                                Text("(Plat. #\(train.platform))")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -220,11 +227,11 @@ struct TrainInfoRow: View {
         
         var trainInfo = "\(departureTime) → \(arrivalTime) [\(travelTime)] (\(train.trainChanges))"
         
-        // Add train numbers
-        if train.trainChanges > 0 && !train.allTrainNumbers.isEmpty {
-            trainInfo += " (\(train.allTrainNumbers.map { "#\($0)" }.joined(separator: ", ")))"
-        } else if !train.trainNumber.isEmpty {
-            trainInfo += " (#\(train.trainNumber))"
+        // Add platform numbers
+        if train.trainChanges > 0 && train.allPlatforms.count > 1 {
+            trainInfo += " (Pl. #\(train.allPlatforms.joined(separator: ", ")))"
+        } else if !train.platform.isEmpty {
+            trainInfo += " (Pl. #\(train.platform))"
         }
         
         NSPasteboard.general.clearContents()
@@ -236,37 +243,20 @@ struct HeaderView: View {
     let fromStationName: String
     let toStationName: String
     let onReverseDirection: () -> Void
-    let isFromCache: Bool
-    let cacheAgeMinutes: Int?
     
     var body: some View {
-        VStack(spacing: 3) {
-            Button(action: onReverseDirection) {
-                HStack {
-                    Text("\(fromStationName) → \(toStationName)")
-                        .lineLimit(1)
-                    Spacer()
-                    Image(systemName: "arrow.left.arrow.right")
-                        .font(.caption)
-                }
-                .contentShape(Rectangle())
+        Button(action: onReverseDirection) {
+            HStack {
+                Text("\(fromStationName) → \(toStationName)")
+                    .lineLimit(1)
+                Spacer()
+                Image(systemName: "arrow.left.arrow.right")
+                    .font(.caption)
             }
-            .buttonStyle(AccessoryBarButtonStyle())
-            .help("\(fromStationName) → \(toStationName)")
-            
-            if isFromCache, let cacheAge = cacheAgeMinutes {
-                HStack(spacing: 3) {
-                    Image(systemName: "clock.arrow.circlepath")
-                        .font(.caption2)
-                        .foregroundColor(.secondary.opacity(0.8))
-                    
-                    Text("Fetched \(cacheAge)m ago")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary.opacity(0.8))
-                }
-                .frame(maxWidth: .infinity, alignment: .trailing)
-            }
+            .contentShape(Rectangle())
         }
+        .buttonStyle(AccessoryBarButtonStyle())
+        .help("\(fromStationName) → \(toStationName)")
         .padding(EdgeInsets(top: 8, leading: 10, bottom: 8, trailing: 0))
     }
 }
@@ -359,8 +349,7 @@ struct TrainPopoverView_Previews: PreviewProvider {
                     toStationName: "Haifa - Hof HaCarmel",
                     trainChanges: 0,
                     allTrainNumbers: ["123"],
-                    isFromCache: true,
-                    cacheAgeMinutes: 15
+                    allPlatforms: ["1"]
                 ),
                 TrainSchedule(
                     trainNumber: "456",
@@ -371,8 +360,7 @@ struct TrainPopoverView_Previews: PreviewProvider {
                     toStationName: "Haifa - Hof HaCarmel",
                     trainChanges: 1,
                     allTrainNumbers: ["456", "789"],
-                    isFromCache: true,
-                    cacheAgeMinutes: 15
+                    allPlatforms: ["2", "3"]
                 )
             ],
             fromStationName: "Tel Aviv - Savidor",
