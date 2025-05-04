@@ -17,12 +17,13 @@ A sleek and efficient macOS menu bar app for tracking Israel Railways train sche
 - **Menu Bar Integration**: Live train information right in your macOS menu bar
 - **Quick Access**: See upcoming trains at a glance in a popover interface
 - **Customization**: Set preferred departure & destination stations 
+- **Favorite Routes**: Save and quickly switch between your commonly used routes
+- **Smart Filtering**: Filter trains by walking time and number of train changes
 
 ## Screenshots
 
 <p align="center">
-  <img src="screenshots/menu.png" width="400" alt="Menu Bar Interface">
-  <img src="screenshots/prefs.png" width="400" alt="Menu Bar Interface">
+  <img src="screenshots/screen.png" width="400" alt="Menu Bar Interface">
 </p>
 
 ## Installation

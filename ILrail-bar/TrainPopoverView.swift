@@ -11,6 +11,10 @@ struct TrainPopoverView: View {
     let onWebsite: () -> Void
     let onAbout: () -> Void
     let onQuit: () -> Void
+    let onSelectFavoriteRoute: (String) -> Void
+    
+    @State private var showSaveRouteDialog: Bool = false
+    @State private var showManageRoutesDialog: Bool = false
     
     init(trainSchedules: [TrainSchedule], 
          fromStationName: String,
@@ -22,7 +26,8 @@ struct TrainPopoverView: View {
          onPreferences: @escaping () -> Void,
          onWebsite: @escaping () -> Void,
          onAbout: @escaping () -> Void,
-         onQuit: @escaping () -> Void) {
+         onQuit: @escaping () -> Void,
+         onSelectFavoriteRoute: @escaping (String) -> Void) {
         self.trainSchedules = trainSchedules
         self.fromStationName = fromStationName
         self.toStationName = toStationName
@@ -33,6 +38,7 @@ struct TrainPopoverView: View {
         self.onWebsite = onWebsite
         self.onAbout = onAbout
         self.onQuit = onQuit
+        self.onSelectFavoriteRoute = onSelectFavoriteRoute
     }
     
     var body: some View {
@@ -42,7 +48,10 @@ struct TrainPopoverView: View {
                 fromStationName: fromStationName,
                 toStationName: toStationName,
                 isDirectionReversed: PreferencesManager.shared.preferences.isDirectionReversed,
-                onReverseDirection: onReverseDirection
+                favoriteRoutes: PreferencesManager.shared.preferences.favoriteRoutes,
+                stations: Station.allStations,
+                onReverseDirection: onReverseDirection,
+                onSelectFavoriteRoute: onSelectFavoriteRoute
             )
             
             Divider()
@@ -131,6 +140,27 @@ struct TrainPopoverView: View {
         }
         .frame(width: 350)
         .background(Color(NSColor.windowBackgroundColor))
+        .sheet(isPresented: $showSaveRouteDialog) {
+            SaveRouteView(
+                isPresented: $showSaveRouteDialog,
+                stations: Station.allStations,
+                onSave: { routeName in
+                    PreferencesManager.shared.saveCurrentRouteAsFavorite(name: routeName)
+                }
+            )
+        }
+        .sheet(isPresented: $showManageRoutesDialog) {
+            ManageFavoritesView(
+                isPresented: $showManageRoutesDialog,
+                stations: Station.allStations
+            )
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .saveCurrentRoute)) { _ in
+            showSaveRouteDialog = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .manageRoutes)) { _ in
+            showManageRoutesDialog = true
+        }
     }
 }
 
@@ -245,39 +275,74 @@ struct HeaderView: View {
     let toStationName: String
     let isDirectionReversed: Bool
     let onReverseDirection: () -> Void
+    let onSelectFavoriteRoute: (String) -> Void
+    let favoriteRoutes: [FavoriteRoute]
+    let stations: [Station]
     @State private var isRightDirection: Bool
-    
-    init(fromStationName: String, toStationName: String, isDirectionReversed: Bool, onReverseDirection: @escaping () -> Void) {
+
+    init(fromStationName: String, toStationName: String, isDirectionReversed: Bool, 
+         favoriteRoutes: [FavoriteRoute] = [], stations: [Station] = [],
+         onReverseDirection: @escaping () -> Void,
+         onSelectFavoriteRoute: @escaping (String) -> Void = { _ in }) {
         self.fromStationName = fromStationName
         self.toStationName = toStationName
         self.isDirectionReversed = isDirectionReversed
+        self.favoriteRoutes = favoriteRoutes
+        self.stations = stations
         self.onReverseDirection = onReverseDirection
+        self.onSelectFavoriteRoute = onSelectFavoriteRoute
 
         // Initialize the arrow direction based on the current direction state
         _isRightDirection = State(initialValue: !isDirectionReversed)
     }
     
     var body: some View {
-        Button(action: {
-            isRightDirection.toggle()
-            onReverseDirection()
-        }) {
-            HStack {
-                Text("\(fromStationName)")
-                    .lineLimit(1)
-                Text(isRightDirection ? "→" : "←")
-                    .foregroundStyle(.secondary)
-                Text("\(toStationName)")
-                    .lineLimit(1)
-                Spacer()
-                Image(systemName: "arrow.left.arrow.right")
-                    .font(.caption)
+        HStack {
+            Button(action: {
+                isRightDirection.toggle()
+                onReverseDirection()
+            }) {
+                HStack {
+                    Text("\(fromStationName)")
+                        .lineLimit(1)
+                    Text(isRightDirection ? "→" : "←")
+                        .foregroundStyle(.secondary)
+                    Text("\(toStationName)")
+                        .lineLimit(1)
+                    Spacer()
+                    Image(systemName: "arrow.left.arrow.right")
+                        .font(.caption)
+                }
+                .contentShape(Rectangle())
             }
-            .contentShape(Rectangle())
+            .buttonStyle(AccessoryBarButtonStyle())
+            .help("\(fromStationName) \(isRightDirection ? "→" : "←") \(toStationName)")
+
+            if !favoriteRoutes.isEmpty {
+                Menu {
+                    ForEach(favoriteRoutes) { route in
+                        Button {
+                            onSelectFavoriteRoute(route.id)
+                        } label: {
+                            let fromStationName = stations.first { $0.id == route.fromStation }?.name ?? route.fromStation
+                            let toStationName = stations.first { $0.id == route.toStation }?.name ?? route.toStation
+
+                            Label(
+                                title: { Text("\(route.name)") },
+                                icon: { Image(systemName: "star") }
+                            ).help("\(fromStationName) \(route.isDirectionReversed ? "←" : "→") \(toStationName)")
+                        }
+                    }
+                } label: {
+                    Image(systemName: "star")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .menuStyle(BorderlessButtonMenuStyle())
+                .frame(width: 20)
+            }
         }
-        .buttonStyle(AccessoryBarButtonStyle())
-        .help("\(fromStationName) \(isRightDirection ? "→" : "←") \(toStationName)")
-        .padding(EdgeInsets(top: 8, leading: 10, bottom: 8, trailing: 0))
+        .padding(EdgeInsets(top: 8, leading: 10, bottom: 8, trailing: 10))
     }
 }
 
@@ -392,7 +457,8 @@ struct TrainPopoverView_Previews: PreviewProvider {
             onPreferences: {},
             onWebsite: {},
             onAbout: {},
-            onQuit: {}
+            onQuit: {},
+            onSelectFavoriteRoute: { _ in }
         )
     }
 }
