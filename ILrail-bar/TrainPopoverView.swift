@@ -60,7 +60,7 @@ struct TrainPopoverView: View {
             if !trainSchedules.isEmpty {
                 VStack(alignment: .leading, spacing: 0) {
                     HStack {
-                        Text("Next:")
+                        Text("Next\(DateFormatters.formatDateLabel(for: trainSchedules[0].departureTime))")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                         
@@ -78,7 +78,10 @@ struct TrainPopoverView: View {
                         Divider()
                             .padding(.vertical, 5)
                         
-                        Text("Upcoming:")
+                        // Get the date for the second train (first upcoming train)
+                        let upcomingDateLabel = DateFormatters.formatDateLabel(for: trainSchedules[1].departureTime)
+                        
+                        Text("Upcoming\(upcomingDateLabel)")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .padding(.horizontal)
@@ -95,6 +98,17 @@ struct TrainPopoverView: View {
                                 Divider()
                                     .padding(.horizontal)
                             }
+                        }
+                        let preferences = PreferencesManager.shared.preferences
+                        if preferences.maxTrainChanges != -1 {
+                            HStack {
+                                Text("Some routes are filtered out")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                                    .padding(.top, 3)
+                                Spacer()
+                            }
+                            .padding(.horizontal)
                         }
                     }
                 }
@@ -295,54 +309,57 @@ struct HeaderView: View {
         // Initialize the arrow direction based on the current direction state
         _isRightDirection = State(initialValue: !isDirectionReversed)
     }
-    
+
     var body: some View {
         HStack {
-            Button(action: {
-                isRightDirection.toggle()
-                onReverseDirection()
-            }) {
-                HStack {
-                    Text("\(fromStationName)")
-                        .lineLimit(1)
-                    Text(isRightDirection ? "→" : "←")
-                        .foregroundStyle(.secondary)
-                    Text("\(toStationName)")
-                        .lineLimit(1)
-                    Spacer()
-                    Image(systemName: "arrow.left.arrow.right")
-                        .font(.caption)
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(AccessoryBarButtonStyle())
-            .help("\(fromStationName) \(isRightDirection ? "→" : "←") \(toStationName)")
-
+            routeButton
             if !favoriteRoutes.isEmpty {
-                Menu {
-                    ForEach(favoriteRoutes) { route in
-                        Button {
-                            onSelectFavoriteRoute(route.id)
-                        } label: {
-                            let fromStationName = stations.first { $0.id == route.fromStation }?.name ?? route.fromStation
-                            let toStationName = stations.first { $0.id == route.toStation }?.name ?? route.toStation
-
-                            Label(
-                                title: { Text("\(route.name)") },
-                                icon: { Image(systemName: "star") }
-                            ).help("\(fromStationName) \(route.isDirectionReversed ? "←" : "→") \(toStationName)")
-                        }
-                    }
-                } label: {
-                    Image(systemName: "star")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                .menuStyle(BorderlessButtonMenuStyle())
-                .frame(width: 20)
+                favoritesMenu
             }
         }
         .padding(EdgeInsets(top: 8, leading: 10, bottom: 8, trailing: 10))
+    }
+
+    private var routeButton: some View {
+        Button(action: {
+            isRightDirection.toggle()
+            onReverseDirection()
+        }) {
+            HStack {
+                Text("\(fromStationName)")
+                    .lineLimit(1)
+                Text(isRightDirection ? "→" : "←")
+                    .foregroundStyle(.secondary)
+                Text("\(toStationName)")
+                    .lineLimit(1)
+                Spacer()
+                Image(systemName: "arrow.left.arrow.right")
+                    .font(.caption)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(AccessoryBarButtonStyle())
+        .help("\(fromStationName) \(isRightDirection ? "→" : "←") \(toStationName)")
+    }
+
+    private var favoritesMenu: some View {
+        Menu {
+            ForEach(favoriteRoutes) { route in
+                Button {
+                    onSelectFavoriteRoute(route.id)
+                } label: {
+                    let fromStationName = stations.first { $0.id == route.fromStation }?.name ?? route.fromStation
+                    let toStationName = stations.first { $0.id == route.toStation }?.name ?? route.toStation
+
+                    Text(route.name)
+                        .help("\(fromStationName) \(route.isDirectionReversed ? "←" : "→") \(toStationName)")
+                }
+            }
+        } label: {
+            Image(systemName: "star")
+        }
+        .menuStyle(BorderlessButtonMenuStyle())
+        .frame(width: 20)
     }
 }
 
